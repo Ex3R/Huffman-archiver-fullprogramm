@@ -9,7 +9,7 @@ void showInfo(char* archiveName)
 	FILE* infoAboutFiles = NULL;
 	if ((archive = fopen(archiveName, "rb")) == NULL)
 		OPEN_ERR
-	if ((infoAboutFiles = fopen("infoAboutFiles.txt", "wb")) == NULL)
+	if ((infoAboutFiles = fopen("output/infoAboutFiles.txt", "wb")) == NULL)
 		OPEN_ERR
 	//определение размера файла
 	unsigned int endOFFile = 0;

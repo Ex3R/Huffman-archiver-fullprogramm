@@ -2,14 +2,13 @@
 #include "errorsAndWarnings.h";
 char* makeNameShorter(char* name)
 {
-	//char String[] = { "name" };
-	//char *newShortName = NULL;
 	int i = strlen(name);
 	for (i; ((name[i] != '/') && (i + 1)); i--);
 	return &name[++i];
 }
-int addFiles(char* archiveName, char* fileName, Info **ptrOnStruct, FILE *fin, FILE *fout, int firstly)
+int addFiles(char* archiveName, char* fileName, Info **ptrOnStruct, int firstly)
 {
+	FILE *fin = NULL, *fout = NULL;
 	const unsigned int ussd = 111;
 	struct stat info;
 	stat(fileName, &info);
