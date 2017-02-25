@@ -1,0 +1,2 @@
+input.txt  6  Не сжатый
+input2.txt  5  Не сжатый
