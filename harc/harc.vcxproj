@@ -145,6 +145,7 @@
     <ClCompile Include="addFiles.c" />
     <ClCompile Include="checkSum.c" />
     <ClCompile Include="errorsAndWarnings.h" />
+    <ClCompile Include="extractionFiles.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="parametrParsing.c" />
     <ClCompile Include="showInfo.c" />
