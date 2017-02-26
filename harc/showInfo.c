@@ -12,6 +12,7 @@ void showInfo(char* archiveName)
 	if ((infoAboutFiles = fopen("output/infoAboutFiles.txt", "wb")) == NULL)
 		OPEN_ERR
 	//определение размера файла
+		//TODO: ?????
 	unsigned int endOFFile = 0;
 	fseek(archive, 0, SEEK_END);
 	endOFFile = ftell(archive);

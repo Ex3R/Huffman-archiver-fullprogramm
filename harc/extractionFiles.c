@@ -1,7 +1,7 @@
 #include "header.h"
 #include "errorsAndWarnings.h"
-//1 - принадлежит
-//0 -нет
+//0 - принадлежит, всё хорошо
+//1 -нет
 int checkUssd(char* archiveName, const unsigned int ussd)
 {
 	int i = strlen(archiveName);
@@ -11,7 +11,7 @@ int checkUssd(char* archiveName, const unsigned int ussd)
 	if (strcmp(tmp, ".mi"))
 	{
 		printf("Данный файл имеет отличное от архивного расширения .mi\n");
-		return 0;
+		return 1;
 	}
 	FILE* archive = NULL;
 	if ((archive = fopen(archiveName, "rb")) == NULL)
@@ -23,7 +23,7 @@ int checkUssd(char* archiveName, const unsigned int ussd)
 	if (endOFFile == 0)
 	{
 		printf("Архив пуст:(\n");
-		return 0;
+		return 1;
 	}
 	fseek(archive, 0, SEEK_SET);
 	//проверка сигнатуры
@@ -36,8 +36,8 @@ int checkUssd(char* archiveName, const unsigned int ussd)
 	if (curUssd != ussd)
 	{
 		printf("Данный файл имеет отличную от архивной сигнатуру\n");
-		return 0;
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
