@@ -13,7 +13,7 @@ typedef struct {
 	char flags;// 0 -если не сжатый
 	unsigned int size;
 } Info;
-int toggleSwitch(char* operation, int amountOfParam, char *param[]);
+char** checkValidFiles(int amount, char * param[], int* ptrOnStrCount);
 int checkUssd(char* archiveName, const unsigned int ussd);
 char* makeNameShorter(char* name);
 unsigned short crc16(unsigned char * pcBlock, unsigned short len);

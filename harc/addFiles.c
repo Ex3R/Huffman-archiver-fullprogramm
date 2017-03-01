@@ -1,5 +1,50 @@
 #include "header.h";
 #include "errorsAndWarnings.h";
+
+char** checkValidFiles(int amount, char * param[], int* strcount)
+{
+	int noFile = 0;
+	int dubl = 0;
+	FILE* tryOpen = NULL;
+	char **strarray = NULL;
+	(*strcount) = 0;
+	for (int i = 3; i != amount; i++)
+	{
+		if ((tryOpen = fopen(param[i], "rb")) == NULL)
+			//переходим на следующий
+			continue;
+		else
+		{
+			//сравнение на повтор
+			for (int j = 3; (j<i); j++)
+			{	
+				//если совпал, то выводим сообщение и игнорим его
+				if (!strcmp(param[i], param[j]))
+				{
+					printf("[WARNING]Несколько раз встретился файл %s\n", param[i]);
+					dubl = 1;
+					break;	
+				}		
+			}
+			if (dubl == 1)
+			{
+				dubl = 0;
+				continue;
+				//также пропускаем его
+			}
+		//добавление имени в массив
+		strarray = (char **)realloc(strarray, ((*strcount) + 1) * sizeof(char *));
+		strarray[(*strcount)++] = strdup(param[i]);
+		}
+	}
+	//!дописать free для всех элементов
+	/* print the array of strings 
+	for (int i = 0; i < strcount; i++)
+		printf("strarray[%d] == %s\n", i, strarray[i]);
+	*/
+	return strarray;
+}
+//для обрезки длинного имени
 char* makeNameShorter(char* name)
 {
 	int i = strlen(name);

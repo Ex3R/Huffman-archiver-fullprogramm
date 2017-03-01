@@ -12,6 +12,9 @@ int main(int argc, char *argv[]) {
 		//checkUssd("output/output.txt",111);
 
 		//toggleSwitch(argv[1], argc, &argv);
+		int* strcount = (int *)malloc(sizeof(int));
+		char** s= checkValidFiles(argc, argv, strcount);
+		int k = *strcount;
 
 	if (argc < 2)
 	{
@@ -77,6 +80,11 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 
+	/*
+	Процедура проверки имён
+	*/
+	
+	
 	//отчистка памяти под структуру, которую мы используем многократно
 	free(ptrOnStruct);
 	return 0;
