@@ -147,7 +147,7 @@
     <ClCompile Include="errorsAndWarnings.h" />
     <ClCompile Include="extractionFiles.c" />
     <ClCompile Include="main.c" />
-    <ClCompile Include="parametrParsing.c" />
+    <ClCompile Include="toggleSwitch.c" />
     <ClCompile Include="showInfo.c" />
   </ItemGroup>
   <ItemGroup>

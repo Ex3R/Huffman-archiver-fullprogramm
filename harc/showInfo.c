@@ -30,20 +30,23 @@ void showInfo(char* archiveName)
 	char name[256];
 	char flags = 0;
 	unsigned int size = 0;
+
+	//однократное чтение сигнатуры
+	if (fread(&ussd, sizeof(unsigned int), 1, archive) != 1)
+		READING_DATA_ERR
 	while ((ftell(archive))!= endOFFile)
 	{
 		//чтение
-		if (fread(&ussd, sizeof(unsigned int), 1, archive)!=1)
+		
+		if ((fread(&checkSum, sizeof(unsigned short), 1, archive))!=1)
 			READING_DATA_ERR
-		if (fread(&checkSum, sizeof(unsigned short), 1, archive)!=1)
+		if ((fread(&lengthName, sizeof(char), 1, archive))!=1)
 			READING_DATA_ERR
-		if (fread(&lengthName, sizeof(char), 1, archive)!=1)
+		if ((fread(&name, lengthName, 1, archive))!=1)
 			READING_DATA_ERR
-		if (fread(&name, lengthName, 1, archive)!=1)
+		if ((fread(&flags, sizeof(char), 1, archive))!=1)
 			READING_DATA_ERR
-		if (fread(&flags, sizeof(char), 1, archive)!=1)
-			READING_DATA_ERR
-		if (fread(&size, sizeof(unsigned int), 1, archive)!=1)
+		if ((fread(&size, sizeof(unsigned int), 1, archive))!=1)
 			READING_DATA_ERR
 		if (fseek(archive, size, SEEK_CUR))
 			READING_DATA_ERR

@@ -1,7 +1,7 @@
 #include "header.h";
 #include "errorsAndWarnings.h";
-
-char** checkValidFiles(int amount, char * param[], int* strcount)
+//не рабоч€((((((
+char* checkValidFiles(int amount, char * param[], int* strcount)
 {
 	int noFile = 0;
 	int dubl = 0;
@@ -38,10 +38,11 @@ char** checkValidFiles(int amount, char * param[], int* strcount)
 		}
 	}
 	//!дописать free дл€ всех элементов
-	/* print the array of strings 
+
+	/* print the array of strings*/ 
 	for (int i = 0; i < strcount; i++)
 		printf("strarray[%d] == %s\n", i, strarray[i]);
-	*/
+	
 	return strarray;
 }
 //дл€ обрезки длинного имени
@@ -51,8 +52,232 @@ char* makeNameShorter(char* name)
 	for (i; ((name[i] != '/') && (i + 1)); i--);
 	return &name[++i];
 }
-int addFiles(char* archiveName, char* fileName, Info **ptrOnStruct, int firstly)
+/*‘ункци€ будет определ€ть размер файла
+0 - если не удалось открыть
+1- если удалось открыть, но он пуст
+2- если не пуст
+
+*/
+int isEmptyFile(char* fileName)
 {
+	FILE* file = NULL;
+	//если выполн€етс€, значит такого архива нет, и его нужно создать
+	if ((file = fopen(fileName, "rb")) == NULL)
+	{
+		return 0;
+	}
+
+	long endOFFile = 0;
+	fseek(file, 0, SEEK_END);
+	endOFFile = ftell(file);
+	if (endOFFile == 0)
+	{
+		//значит файл есть, но он пуст
+		return 1;
+	}
+	else return 2;
+}
+
+int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrOnStruct)
+{
+	const unsigned int ussd = 111;
+	struct stat info;
+	char *data = NULL;
+	FILE *fin = NULL,*tmp=NULL, *fout = NULL;
+	int createOrNot;
+	switch (createOrNot = isEmptyFile(archiveName))
+	{
+		case 0:
+		case 1:
+			if ((fout = fopen(archiveName, "a+b")) == NULL)
+				OPEN_ERR
+			if ((fwrite(&(ussd),sizeof(unsigned int), 1 ,fout))!=1)
+				WRITING_DATA_ERR
+			createOrNot = 0;
+			break;
+		case 2:
+			checkUssd(archiveName, 111);
+			break;
+	}
+	int u = 0;
+	if (fout) fclose(fout);
+	if ((fout = fopen(archiveName, "a+b")) == NULL)
+		OPEN_ERR
+	//то есть нужно просто в цикле записать
+	if ((createOrNot == 0) || (createOrNot == 1))
+	{
+		for (u; u < amountOfFiles; u++)
+		{
+			stat(fileNames[u], &info);
+			if ((fin = fopen(fileNames[u], "rb")) == NULL)
+				OPEN_ERR
+			if ((data = (char*)malloc(info.st_size)) == NULL)
+				ALLOC_MEMORY_ERR
+	
+	(*ptrOnStruct)->checkSum = crc16(data, info.st_size);//контрольна€ сумма
+	(*ptrOnStruct)->lengthName = strlen(makeNameShorter(fileNames[u])); //длина имени файла
+	strcpy((*ptrOnStruct)->name, makeNameShorter(fileNames[u]));
+	(*ptrOnStruct)->flags = 0;
+	(*ptrOnStruct)->size = info.st_size;
+
+		if ((fwrite(&((*ptrOnStruct)->checkSum),sizeof(unsigned short), 1, fout)) != 1)
+			WRITING_DATA_ERR
+		if ((fwrite(&((*ptrOnStruct)->lengthName), sizeof(char), 1, fout)) != 1)
+			WRITING_DATA_ERR
+		if ((fwrite(&((*ptrOnStruct)->name), strlen((*ptrOnStruct)->name), 1, fout)) != 1)
+			WRITING_DATA_ERR
+		if (fwrite(&((*ptrOnStruct)->flags), sizeof(char), 1, fout) != 1)
+			WRITING_DATA_ERR
+		if (fwrite(&((*ptrOnStruct)->size), sizeof((*ptrOnStruct)->size), 1, fout) != 1)
+			WRITING_DATA_ERR
+		//чтение самого файла
+	if ((fread(data, (*ptrOnStruct)->size, 1, fin)) != 1)
+		READING_DATA_ERR
+	if ((fwrite(data, (*ptrOnStruct)->size, 1, fout)) != 1)
+		WRITING_DATA_ERR
+	//очищение буфера, в котором хранитс€ файл
+	free(data);
+	if (fin) fclose(fin);
+		}
+	}
+	//заморочитьс€ с временным архивом
+	else
+	{
+		if ((fin = fopen(archiveName, "rb")) == NULL)
+			OPEN_ERR
+		//создание временного файла
+		if ((tmp = fopen("output/tmp.txt", "a+b")) == NULL)
+			OPEN_ERR
+		//запись сигнатуры во временный архив
+		if ((fwrite(&(ussd), sizeof(unsigned int), 1, tmp))!= 1)
+			WRITING_DATA_ERR
+
+		unsigned int endOFFile = 0;
+		fseek(fin, 0, SEEK_END);
+		endOFFile = ftell(fin);
+		fseek(fin, 0, SEEK_SET);
+
+		unsigned int TMPussd = 0;
+		unsigned short TMPcheckSum = 0;
+		char TMPlengthName = "";
+		char TMPname[256];
+		char TMPflags = 0;
+		unsigned int TMPsize = 0;
+
+		if (fread(&TMPussd, sizeof(unsigned int), 1, fin) != 1)
+			READING_DATA_ERR
+		//всЄ это в цикл for
+for(int p=0;p<amountOfFiles;p++)
+{
+			//флаг =1 , если совпадЄт хоть один файл
+		int flag = 0;
+		int y;//переменна€ дл€ цикла for(поиск повторов)
+while ((ftell(fin)) != endOFFile)
+{
+		
+		if ((fread(&TMPcheckSum, sizeof(unsigned short), 1, fin))!=1)
+			READING_DATA_ERR
+		if ((fread(&TMPlengthName, sizeof(char), 1, fin))!=1)
+			READING_DATA_ERR
+		if ((fread(&TMPname, TMPlengthName, 1, fin))!=1)
+			READING_DATA_ERR
+		if ((fread(&TMPflags, sizeof(char), 1, fin))!=1)
+			READING_DATA_ERR
+		if ((fread(&TMPsize, sizeof(unsigned int), 1, fin))!=1)
+			READING_DATA_ERR
+		//сделаем , на вс€кий случай
+		free(data);
+		if ((data = (char*)malloc(TMPsize)) == NULL)
+			ALLOC_MEMORY_ERR
+
+		if ((fread(data, TMPsize, 1, fin)) != 1)
+			READING_DATA_ERR
+			//поиск повторов
+			y = 0;
+			for (y; y < amountOfFiles; y++)
+			{
+				if (!strcmp(TMPname, fileNames[y]))
+				{
+					flag = 1;
+					break;
+				}
+			}
+		//если есть совпадение
+		if (flag)
+		{
+			flag = 0;
+			//fileNames[y] = "0";
+			continue;
+		}
+		
+		else
+		{
+		//записываем во временный архив
+		if ((fwrite(&TMPcheckSum,sizeof(unsigned short), 1, fout)) != 1)
+			WRITING_DATA_ERR
+		if ((fwrite(&TMPlengthName, sizeof(char), 1, fout)) != 1)
+			WRITING_DATA_ERR
+		if ((fwrite(&TMPname, strlen((*ptrOnStruct)->name), 1, fout)) != 1)
+			WRITING_DATA_ERR
+		if (fwrite(&TMPflags, sizeof(char), 1, fout) != 1)
+			WRITING_DATA_ERR
+		if (fwrite(&TMPsize, sizeof((*ptrOnStruct)->size), 1, fout) != 1)
+			WRITING_DATA_ERR
+		//запись самого файла
+		if ((fwrite(data, TMPsize, 1, fout)) != 1)
+			WRITING_DATA_ERR
+		free(data);
+		fileNames[p] = "0";
+		}
+
+}
+	}//хакрытие основного for'a
+		//записать встречающиес€
+		for (int t = 0; t < amountOfFiles; t++)
+		{
+			if (strcmp(fileNames[t], "0"))
+			{
+				//всЄ это в функцию 
+				stat(fileNames[t], &info);
+				if ((data = (char*)malloc(info.st_size)) == NULL)
+				ALLOC_MEMORY_ERR
+	
+	(*ptrOnStruct)->checkSum = crc16(data, info.st_size);//контрольна€ сумма
+	(*ptrOnStruct)->lengthName = strlen(makeNameShorter(fileNames[t])); //длина имени файла
+	strcpy((*ptrOnStruct)->name, makeNameShorter(fileNames[t]));
+	(*ptrOnStruct)->flags = 0;
+	(*ptrOnStruct)->size = info.st_size;
+
+		if ((fwrite(&((*ptrOnStruct)->checkSum),sizeof(unsigned short), 1, fout)) != 1)
+			WRITING_DATA_ERR
+		if ((fwrite(&((*ptrOnStruct)->lengthName), sizeof(char), 1, fout)) != 1)
+			WRITING_DATA_ERR
+		if ((fwrite(&((*ptrOnStruct)->name), strlen((*ptrOnStruct)->name), 1, fout)) != 1)
+			WRITING_DATA_ERR
+		if (fwrite(&((*ptrOnStruct)->flags), sizeof(char), 1, fout) != 1)
+			WRITING_DATA_ERR
+		if (fwrite(&((*ptrOnStruct)->size), sizeof((*ptrOnStruct)->size), 1, fout) != 1)
+			WRITING_DATA_ERR
+		//чтение самого файла
+	if ((fread(data, (*ptrOnStruct)->size, 1, fin)) != 1)
+		READING_DATA_ERR
+	if ((fwrite(data, (*ptrOnStruct)->size, 1, fout)) != 1)
+		WRITING_DATA_ERR
+	//очищение буфера, в котором хранитс€ файл
+	free(data);
+			}
+		}
+	//удалить архив переименовать temp
+		remove(archiveName);
+		rename("output/tmp.txt", archiveName);
+
+
+}//закрытие else
+
+	if (fin) fclose(fin);
+	if (fout) fclose(fout);
+	if (tmp) fclose(tmp);
+	/*
 	FILE *fin = NULL, *fout = NULL;
 	const unsigned int ussd = 111;
 	struct stat info;
@@ -71,8 +296,9 @@ int addFiles(char* archiveName, char* fileName, Info **ptrOnStruct, int firstly)
 	(*ptrOnStruct)->flags = 0;
 	(*ptrOnStruct)->size = info.st_size;
 
-		//запись сигнатуры
-		if (firstly==1) fwrite(&(ussd), 1, sizeof(const unsigned int), fout);
+		//запись сигнатуры 
+		fwrite(&(ussd), 1, sizeof(const unsigned int), fout);
+
 		if ((fwrite(&((*ptrOnStruct)->checkSum),sizeof(unsigned short), 1, fout)) != 1)
 			WRITING_DATA_ERR
 		if ((fwrite(&((*ptrOnStruct)->lengthName), sizeof(char), 1, fout)) != 1)
@@ -94,6 +320,6 @@ int addFiles(char* archiveName, char* fileName, Info **ptrOnStruct, int firstly)
 	if (!fin) CLOSING_FILE_ERR
 		else fclose(fin);
 	if (!fout) CLOSING_FILE_ERR 
-		else fclose(fout);
+		else fclose(fout);*/
 	return 0;
 }

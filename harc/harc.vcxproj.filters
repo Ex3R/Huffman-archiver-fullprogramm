@@ -24,9 +24,6 @@
     <ClCompile Include="addFiles.c">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
-    <ClCompile Include="parametrParsing.c">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
     <ClCompile Include="errorsAndWarnings.h">
       <Filter>Заголовочные файлы</Filter>
     </ClCompile>
@@ -34,6 +31,9 @@
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
     <ClCompile Include="extractionFiles.c">
+      <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
+    <ClCompile Include="toggleSwitch.c">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
   </ItemGroup>
