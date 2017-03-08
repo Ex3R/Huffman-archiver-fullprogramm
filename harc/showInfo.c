@@ -1,5 +1,4 @@
 #include "header.h";
-#include "errorsAndWarnings.h";
 
 void showInfo(char* archiveName)
 {

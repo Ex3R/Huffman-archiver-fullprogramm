@@ -3,7 +3,9 @@
 #include <string.h>
 #include <sys\types.h>
 #include <sys/stat.h>//для стата
+#include "errorsAndWarnings.h"
 
+#define SizeOfBuf 1024
 
 /*заголовок(шапка)*/
 typedef struct {

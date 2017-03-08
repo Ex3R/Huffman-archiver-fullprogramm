@@ -21,8 +21,5 @@ int main(int argc, char *argv[]) {
 			return 0;
 		}
 	
-	
-	//отчистка памяти под структуру, которую мы используем многократно
-	//free(ptrOnStruct);
 	return 0;
 	}

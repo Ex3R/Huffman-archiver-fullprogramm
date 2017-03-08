@@ -1,5 +1,4 @@
 #include "header.h"
-#include "errorsAndWarnings.h"
 /*
 0- без ошибок
 1 - Данный файл имеет отличное от архивного расширения
@@ -27,8 +26,8 @@ int checkUssd(char* archiveName, const unsigned int ussd, char func)
 	if (fread(&curUssd, sizeof(unsigned int), 1, archive) != 1)
 		READING_DATA_ERR
 	fflush(archive);
-	if (!archive) CLOSING_FILE_ERR
-	else fclose(archive);
+	if (fclose(archive) == -1)
+		CLOSING_FILE_ERR
 	if (curUssd != ussd)
 	{
 		printf("Данный файл имеет отличную от архивной сигнатуру\n");

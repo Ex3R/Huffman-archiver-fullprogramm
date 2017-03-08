@@ -1,5 +1,4 @@
 #include "header.h"
-#include "errorsAndWarnings.h"
 //где operation - argv[1];
 //0 -без ошибок
 //1- знак ошибки
