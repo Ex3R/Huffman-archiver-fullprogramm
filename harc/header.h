@@ -4,6 +4,7 @@
 #include <sys\types.h>
 #include <sys/stat.h>//для стата
 #include "errorsAndWarnings.h"
+#include <stdlib.h>
 
 #define SizeOfBuf 1024
 

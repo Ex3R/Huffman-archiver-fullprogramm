@@ -49,20 +49,13 @@ int toggleSwitch(char* operation, int amount, char *param[])
 				strarray[strcount++] = strdup(param[i]);
 			}
 		}
-
-		//for (int i = 0; i < strcount; i++)
-		//	strcpy(strarray[i],"0");
-		///* print the array of strings*/
+		/* print the array of strings*/
 		//for (int i = 0; i < strcount; i++)
 		//	printf("strarray[%d] == %s\n", i, strarray[i]);
 
-		addFiles(param[2], strarray, strcount, &ptrOnStruct);
-		
-		
-		
-		
-		
-		//free
+		if (strcount > 0) addFiles(param[2], strarray, strcount, &ptrOnStruct);
+		else printf("[ERROR] No files for adding");
+		//free all
 		for (int i = 0; i < strcount; i++)
 			free(strarray[i]);
 		free(strarray);
