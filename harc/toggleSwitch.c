@@ -6,7 +6,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 {
 	if (amount<3)
 	{
-		printf("[ERROR]Количество параметром не может быть меньше 3\n");
+		printf("[ERROR]Количество параметром не может быть меньше 2\n");
 		return 0;
 	}
 	//поместить файл(ы) в архив
@@ -49,6 +49,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 				strarray[strcount++] = strdup(param[i]);
 			}
 		}
+		//вывод полученного спмска на экран
 		/* print the array of strings*/
 		//for (int i = 0; i < strcount; i++)
 		//	printf("strarray[%d] == %s\n", i, strarray[i]);
@@ -75,12 +76,12 @@ int toggleSwitch(char* operation, int amount, char *param[])
 	{
 		if (amount != 3)
 		{
-			printf("Неверное количество параметров для опции -l");
+			printf("Неверное количество параметров для опции %s\n", "-l");
 			return 1;
 		}
 
 		//проверка сигнатуры и расширения
-		if (!checkUssd(param[2], 111))
+		if (!checkUssd(param[2], SIGNATURE))
 		{
 			showInfo(param[2]);
 		}
@@ -89,7 +90,18 @@ int toggleSwitch(char* operation, int amount, char *param[])
 	//удалить файл из архива
 	if (!strcmp(param[1], "-d"))
 	{
-		printf("1\n");
+		if (amount != 4)
+		{
+			printf("Неверное количество параметров для опции %s\n", DELETE);
+			return 1;
+		}
+		if ((checkUssd(param[2],SIGNATURE))!= 0)
+			return 0;
+		Info *ptrOnStruct = NULL; 
+		if ((ptrOnStruct = (Info*)malloc(sizeof(Info))) == NULL)
+			ALLOC_MEMORY_ERR
+		delete(param[2],param[3],&ptrOnStruct);
+		free(ptrOnStruct);
 		return 0;
 	}
 

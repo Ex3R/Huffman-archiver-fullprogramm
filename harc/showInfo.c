@@ -1,65 +1,50 @@
 #include "header.h";
-
 void showInfo(char* archiveName)
 {
-	//возможно перенесу как параметр для вывода на экран
-	int p = 0;
 	FILE* archive = NULL;
 	FILE* infoAboutFiles = NULL;
 	if ((archive = fopen(archiveName, "rb")) == NULL)
 		OPEN_ERR
 	if ((infoAboutFiles = fopen("output/infoAboutFiles.txt", "wb")) == NULL)
 		OPEN_ERR
-	//определение размера файла
-		//TODO: ?????
-	unsigned int endOFFile = 0;
-	fseek(archive, 0, SEEK_END);
-	endOFFile = ftell(archive);
+	unsigned __int64 endOFFile = getSize(archive);
 	if (endOFFile == 0)
 	{
 		printf("Архив пуст:(\n");
 		return;
 	}
-
-	fseek(archive, 0, SEEK_SET);
-
 	unsigned int ussd = 0;
 	unsigned short checkSum = 0;
-	char lengthName = "";
+	char lengthName = 0;
 	char name[256];
 	char flags = 0;
-	unsigned int size = 0;
-
+	unsigned __int64 size = 0;
 	//однократное чтение сигнатуры
 	if (fread(&ussd, sizeof(unsigned int), 1, archive) != 1)
 		READING_DATA_ERR
 	while ((ftell(archive))!= endOFFile)
 	{
-		//чтение
-		
-		if ((fread(&checkSum, sizeof(unsigned short), 1, archive))!=1)
+		if ((fread(&checkSum, SIZE_CHECKSUM, 1, archive))!=1)
 			READING_DATA_ERR
-		if ((fread(&lengthName, sizeof(char), 1, archive))!=1)
+		if ((fread(&lengthName, SIZE_LENGTHNAME, 1, archive))!=1)
 			READING_DATA_ERR
 		if ((fread(&name, lengthName, 1, archive))!=1)
 			READING_DATA_ERR
-		if ((fread(&flags, sizeof(char), 1, archive))!=1)
+		if ((fread(&flags, SIZE_FLAGS, 1, archive))!=1)
 			READING_DATA_ERR
-		if ((fread(&size, sizeof(unsigned int), 1, archive))!=1)
+		if ((fread(&size, SIZE_SIZE, 1, archive))!=1)
 			READING_DATA_ERR
-		if (fseek(archive, size, SEEK_CUR))
-			READING_DATA_ERR
-
-		//запись информации
+		if (_fseeki64_nolock(archive, size, SEEK_CUR)!=0)
+			FSEEK_ERR
+	//запись информации
 	for(int i=0; i<lengthName;i++)
 		fprintf(infoAboutFiles, "%c",name[i]);
-	fprintf(infoAboutFiles, "  %u  ", size);
-	if (flags == 0) fprintf(infoAboutFiles, "%s", "Не сжатый\n");
+	fprintf(infoAboutFiles, "  %llu  ", size);
+	if (flags == ZERO) fprintf(infoAboutFiles, "%s", "Не сжатый\n");
 		else fprintf(infoAboutFiles, "%s", "Cжатый\n");
 	}
-	//закрытие файлов
-	if (!archive) CLOSING_FILE_ERR
-	else fclose(archive);
-	if (!infoAboutFiles) CLOSING_FILE_ERR
-	else fclose(infoAboutFiles);
+	if (fclose(archive) == -1)
+		CLOSING_FILE_ERR
+	if (fclose(infoAboutFiles) == -1)
+		CLOSING_FILE_ERR
 }

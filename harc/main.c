@@ -1,5 +1,4 @@
 #include "header.h"
-#include "errorsAndWarnings.h"
 int main(int argc, char *argv[]) {
 	setlocale(LC_ALL, "RUS");
 	//удалить infoAboutFiles в начале работы программы
@@ -14,6 +13,29 @@ int main(int argc, char *argv[]) {
 		
 		//char** s= checkValidFiles(argc, argv, strcount);
 		//int k = *strcount;
+	/*unsigned short crc = 0xFFFF;
+	FILE *in, *out;
+	if ((in = fopen("data/input1.txt", "rb")) == NULL)
+		OPEN_ERR
+		int m= ftell(in);
+	if ((out = fopen("data/out.txt", "wb")) == NULL)
+		OPEN_ERR
+		
+	ftell(out);
+	char *buffer = NULL;
+	if (!(buffer = (char*)malloc(SizeOfBuf)))
+		ALLOC_MEMORY_ERR
+
+	writeDataToFile(buffer,in,out, &crc);
+	m = ftell(out);
+	m = fseek(out, -2, SEEK_CUR);
+	m = ftell(out);
+
+	free(buffer);*/
+
+
+
+
 
 		if (toggleSwitch(argv[1], argc, argv))
 		{

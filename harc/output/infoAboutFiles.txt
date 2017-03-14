@@ -1,0 +1,3 @@
+input3.txt  6  Не сжатый
+input1.txt  6  Не сжатый
+input2.txt  6  Не сжатый
