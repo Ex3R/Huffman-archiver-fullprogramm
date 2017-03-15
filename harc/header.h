@@ -27,7 +27,7 @@ typedef struct {
 } Info;
 
 unsigned __int64 getSize(FILE* file);
-char writeDataToFile(char *buf, FILE *fin, FILE *fout, unsigned short* crc);
+char writeDataToFile(char *buf, FILE *fin, FILE *fout, unsigned short* crc, unsigned __int64 amount);
 char isEmptyFile(char* fileName);
 int addFiles(char *archiveName, char **fileNames, int *amountOfFiles, Info **ptrOnStruct);
 char checkUssd(char* archiveName, unsigned int ussd);

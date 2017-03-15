@@ -52,9 +52,8 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 	char flagFounded = 0;
 	if (_fseeki64_nolock(archive, SIZE_SIGNATURE, SEEK_SET) != 0)
 		FSEEK_ERR
-		while ((_ftelli64_nolock(tmp)) != size)
+		while ((_ftelli64_nolock(archive)) != size)
 		{
-			free(data);
 			if ((fread(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1 , archive)) != 1)
 				READING_DATA_ERR
 			if ((fread(&((*ptrOnStruct)->lengthName), SIZE_LENGTHNAME , 1 , archive))!= 1)
@@ -94,7 +93,8 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 				WRITING_DATA_ERR
 			if (fwrite(&((*ptrOnStruct)->size), SIZE_SIZE, 1, tmp) != 1)
 				WRITING_DATA_ERR
-			writeDataToFile(data,archive,tmp,NULL);
+			writeDataToFile(data,archive,tmp,NULL, (*ptrOnStruct)->size);
+			free(data);
 		}
 	if (fclose(archive) == -1)
 		CLOSING_FILE_ERR
@@ -110,5 +110,7 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 		printf("[WARNING]Файл %s отсутствует в архиве %s \n", fileName, archiveName);
 		return 1;
 	}
+	else printf("Файл %s был успешно удалён из архива %s \n", fileName, archiveName);
+	
 	return 0;
 }

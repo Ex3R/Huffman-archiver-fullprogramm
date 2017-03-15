@@ -58,20 +58,32 @@ unsigned __int64 getSize(FILE* file)
 0 - если ошибок при записи не возникло
 1- если ошибки
 */
-char writeDataToFile(char *buf, FILE *fin, FILE *fout, unsigned short* crc)
+char writeDataToFile(char *buf, FILE *fin, FILE *fout, unsigned short* crc, unsigned __int64 amount)
 {
-	unsigned __int64 amount = 0;
-	while (amount = fread(buf, 1, SizeOfBuf, fin))
+	unsigned __int64 temp = 0;
+	unsigned __int64 temp2 = amount;
+	int bufferSize = SizeOfBuf;
+	while (temp2!=0)
 	{
-		if (crc)
+		if (temp2 <= bufferSize)
 		{
-			crc16(buf, amount, crc);
+			temp = fread(buf, 1, temp2, fin);
+			temp2 -= temp;
+		}
+		else 
+		{
+			temp = fread(buf, 1, bufferSize, fin);
+			temp2 -= temp;
 		}
 
-		if (fwrite(buf, 1, amount, fout) != amount)
+		if (crc)
+		{
+			crc16(buf, temp, crc);
+		}
+
+		if (fwrite(buf, 1, temp, fout) != temp)
 			WRITING_DATA_ERR
 	}
-
 	return 0;
 }
 /*
@@ -169,7 +181,7 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 			if (fwrite(&((*ptrOnStruct)->size), sizeof(unsigned __int64), 1, fout) != 1)
 				WRITING_DATA_ERR
 			crc = 0xFFFF;
-			writeDataToFile(data,fin,fout,&crc);
+			writeDataToFile(data,fin,fout,&crc, (*ptrOnStruct)->size);
 			fflush(fout);
 			//сдвиг обратно для записи контрольной суммы
 			_fseeki64_nolock(fout, pos, SEEK_SET);
@@ -274,7 +286,7 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 					ALLOC_MEMORY_ERR
 				//запись самого файла
 				crc = 0xFFFF;
-				writeDataToFile(data,fin,tmp,&crc);
+				writeDataToFile(data,fin,tmp,&crc, TMPsize);
 				fflush(tmp);
 				//сдвиг обратно для записи контрольной суммы
 				_fseeki64_nolock(tmp, pos, SEEK_SET);
@@ -318,7 +330,7 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 					WRITING_DATA_ERR
 				//чтение и запись самого файла
 				crc = 0xFFFF;
-				writeDataToFile(data, fin, tmp, &crc);
+				writeDataToFile(data, fin, tmp, &crc, (*ptrOnStruct)->size);
 				//сдвиг обратно для записи контрольной суммы
 				_fseeki64_nolock(tmp, pos, SEEK_SET);
 				(*ptrOnStruct)->checkSum = crc;//контрольная сумма
