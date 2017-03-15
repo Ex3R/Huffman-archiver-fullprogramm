@@ -21,7 +21,7 @@ char checkUssd(char* archiveName, unsigned int ussd)
 	OPEN_ERR
 	//проверка сигнатуры
 	unsigned int curUssd = 0;
-	if (fread(&curUssd, sizeof(unsigned int), 1, archive) != 1)
+	if (fread(&curUssd, SIZE_SIGNATURE, 1, archive) != 1)
 		READING_DATA_ERR
 	fflush(archive);
 	if (fclose(archive) == -1)
@@ -31,7 +31,6 @@ char checkUssd(char* archiveName, unsigned int ussd)
 		printf("ƒанный файл имеет отличную от архивной сигнатуру\n");
 		return 2;
 	}
-
 	return 0;
 }
 char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
@@ -100,6 +99,7 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 		CLOSING_FILE_ERR
 	if (fclose(tmp) == -1)
 		CLOSING_FILE_ERR
+	//TODO
 	if (remove(archiveName) == -1)
 		perror("[ERROR]Could not delete %s\n", archiveName);
 	if (rename("output/tmp.txt", archiveName) == -1)
