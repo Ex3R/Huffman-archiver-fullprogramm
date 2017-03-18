@@ -1,15 +1,4 @@
 #include "header.h"
-char *tmpName(char* NameHHH,int length)
-{
-	char *TMP2name = malloc(length + 1);
-	int b = 0;
-	for (b; b < (length); b++)
-	{
-		TMP2name[b] = NameHHH[b];
-	}
-	TMP2name[b] = '\0';
-	return &TMP2name;
-}
 /*
 0- без ошибок
 1 - Данный файл имеет отличное от архивного расширения
@@ -18,6 +7,7 @@ char *tmpName(char* NameHHH,int length)
 char checkUssd(char* archiveName)
 {
 	//проверка расширения
+	//TODO more shorter
 	int i = strlen(archiveName);
 	for (i; ((archiveName[i] != '.') && (i + 1)); i--);
 	char* tmp = NULL;
@@ -50,7 +40,7 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 	char *data = NULL;
 	unsigned int ussd = SIGNATURE;
 	if ((archive = fopen(archiveName,"rb")) == NULL)
-		CREATE_FILE_ERR
+		OPEN_ERR
 	if ((tmp = fopen("output/tmp.txt", "wb")) == NULL)
 		CREATE_FILE_ERR
 	if ((fwrite(&ussd , SIZE_SIGNATURE , 1 ,tmp))!=1)
@@ -72,13 +62,12 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 				READING_DATA_ERR
 			if ((fread(&((*ptrOnStruct)->size), SIZE_SIZE, 1, archive)) != 1)
 				READING_DATA_ERR
-			char *TMP2name = malloc( ((*ptrOnStruct)->lengthName) + 1);
-			int b = 0;
-			for (b; b < ((*ptrOnStruct)->lengthName); b++)
-			{
-				TMP2name[b] = ((*ptrOnStruct)->name)[b];
-			}
-			TMP2name[b] = '\0';
+			//короткая строка для правильного сравнения
+			char *TMP2name = NULL;
+			if ((TMP2name = (char*)malloc( ((*ptrOnStruct)->lengthName) + 1)) ==NULL)
+				ALLOC_MEMORY_ERR
+			strncpy((TMP2name), (*ptrOnStruct)->name, (*ptrOnStruct)->lengthName);
+			TMP2name[(*ptrOnStruct)->lengthName] = '\0';
 			//если совпали
 				if (!strcmp(TMP2name, fileName))
 				{	
@@ -108,7 +97,7 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 		CLOSING_FILE_ERR
 	if (fclose(tmp) == -1)
 		CLOSING_FILE_ERR
-	//TODO
+	//TODO уникальное имя для темпа
 	if (remove(archiveName) == -1)
 		perror("[ERROR]Could not delete %s\n", archiveName);
 	if (rename("output/tmp.txt", archiveName) == -1)
@@ -119,7 +108,7 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 		printf("[WARNING]Файл %s отсутствует в архиве %s \n", fileName, archiveName);
 		return 1;
 	}
-	else printf("Файл %s был успешно удалён из архива %s \n", fileName, archiveName);
+	else printf("[SUCCSESS:]Файл %s был успешно удалён из архива %s \n", fileName, archiveName);
 	//после удаления может остаться лишь одна сигнатура
 	if ((archive = fopen(archiveName, "rb")) == NULL)
 		OPEN_ERR
@@ -137,10 +126,7 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 				perror("[ERROR]Could not delete %s\n", archiveName);
 		}
 		else return 0;
-	
 	}
-
-	
 	return 0;
 }
 //операции со списком
@@ -173,6 +159,7 @@ void printLinkedList(List *head) {
 }
 makeListOfFiles(int argc, char* argv[],List **head)
 {
+	//начинаем с третьего, так как в параметрах файлы с третьего
 	for (int i = 3; i < argc; i++)
 	{
 		adding(head, argv[i]);

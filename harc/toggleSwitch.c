@@ -166,12 +166,15 @@ int toggleSwitch(char* operation, int amount, char *param[])
 			printf("Неверное количество параметров для опции %s\n", "-l");
 			return 0;
 		}
-
+		Info *ptrOnStruct = NULL;
+		if ((ptrOnStruct = (Info*)malloc(sizeof(Info))) == NULL)
+			ALLOC_MEMORY_ERR
 		//проверка сигнатуры и расширения
 		if (!checkUssd(param[2], SIGNATURE))
 		{
-			showInfo(param[2]);
+			showInfo(param[2],&ptrOnStruct);
 		}
+		free(ptrOnStruct);
 		return 0;
 	}
 	//удалить файл из архива

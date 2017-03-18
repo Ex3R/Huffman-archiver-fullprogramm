@@ -32,22 +32,24 @@ typedef struct List {
 	char *file;
 	struct List *next;
 } List;
+//операции со списком
 void adding(List **head, char *fileName);
 void printLinkedList(List *head);
 makeListOfFiles(int argc, char* argv[], List **head);
-int  deleteByValue(List **head, char *fileName);
-
+int deleteByValue(List **head, char *fileName);
+//добавление
 unsigned __int64 getSize(FILE* file);
 char writeDataToFile(char *buf, FILE *fin, FILE *fout, unsigned short* crc, unsigned __int64 amount);
 char isEmptyFile(char* fileName);
-int addFiles(char *archiveName, char **fileNames, int *amountOfFiles, Info **ptrOnStruct);
-char checkUssd(char* archiveName, unsigned int ussd);
 char* shortNameOnly(char* name);
+int addFiles(char *archiveName, char **fileNames, int *amountOfFiles, Info **ptrOnStruct);
 void crc16(unsigned char * pcBlock, unsigned short len, unsigned short* crc);
-void showInfo(char* archiveName);
+//извлечение и удаление
+char checkUssd(char* archiveName);
 char delete(char *archiveName, char *fileName, Info **ptrOnStruct);
-char integrityСheck(char *archiveName, Info **ptrOnStruct, char* file);
-char *tmpName(char* NameHHH, int length);
+//вывод информации о файлах
+void showInfo(char* archiveName, Info **ptrOnStruct);
+//проверка архива на целостность
+char integrityСheck(char *archiveName, Info **ptrOnStruct, char **file);
 char readDataFromFile(char *buf, FILE *fin, unsigned short* crc, unsigned __int64 amount);
-
 #endif

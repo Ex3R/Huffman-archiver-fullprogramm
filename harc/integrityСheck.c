@@ -52,6 +52,8 @@ char integrityÑheck(char *archiveName, Info **ptrOnStruct,char **file)
 				flagErorr = 1;
 				READING_DATA_ERR
 			}
+			//ñîõðàíåíèÿ ôàéëà äëÿ âûâîäà îøèáêè ôîðìàòà:
+			//ïðîèçîøëà îøèáêà â ôàéëå ....
 			(*file) = (char*)malloc(((*ptrOnStruct)->lengthName) + 1);
 			strncpy((*file), (*ptrOnStruct)->name, (*ptrOnStruct)->lengthName);
 			(*file)[(*ptrOnStruct)->lengthName] = '\0';
@@ -74,9 +76,7 @@ char integrityÑheck(char *archiveName, Info **ptrOnStruct,char **file)
 			free(data);
 			if (currentCheckSum != (*ptrOnStruct)->checkSum)
 				flagErorr = 1;
-
-			
-	}
+	 }
 		if (fclose(archive) == -1)
 			CLOSING_FILE_ERR
 	return flagErorr;
