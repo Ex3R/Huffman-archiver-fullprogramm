@@ -8,6 +8,8 @@
 #include "errorsAndWarnings.h"
 #include <stdlib.h>
 
+#define JOIN(i) output/ ## i
+#define PATH "output/"
 #define SizeOfBuf 1024
 #define EXTENTION ".txt"
 #define SIGNATURE 111

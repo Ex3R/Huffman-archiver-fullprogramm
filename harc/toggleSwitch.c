@@ -89,7 +89,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		unsigned __int64 size = getSize(archive);
 		if (_fseeki64_nolock(archive, SIZE_SIGNATURE, SEEK_SET) != 0)
 			FSEEK_ERR
-		int count;
+		int count = 0;
 		while ((_ftelli64_nolock(archive)) != size)
 		{
 			if ((fread(&((ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1 , archive)) != 1)
@@ -118,10 +118,17 @@ int toggleSwitch(char* operation, int amount, char *param[])
 					FILE *newFile = NULL;
 					char *data = NULL;
 					//как указывать полный путь?!?!?!
-					if ((newFile = fopen(tmp->file, "wb")) == NULL)
+					char *path = NULL;
+					int k = 0;
+					if  ((path = (char*)malloc(k =(strlen(PATH) +strlen(tmpFileName) + 1))) == NULL)
+						ALLOC_MEMORY_ERR
+					strcpy(path, PATH);
+					strcat(path, tmpFileName);
+					if ((newFile = fopen(path, "wb")) == NULL)
 						CREATE_FILE_ERR
+					free(path);
 					if ((data = (char*)malloc(ptrOnStruct->size)) == NULL)
-					ALLOC_MEMORY_ERR
+						ALLOC_MEMORY_ERR
 					writeDataToFile(data, archive, newFile, NULL, ptrOnStruct->size);
 					free(data);
 					//free(tmp);
