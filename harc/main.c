@@ -33,10 +33,23 @@ int main(int argc, char *argv[]) {
 
 	free(buffer);*/
 
+	/*char *TMP2name = malloc(7);
+	printf("%s",tmpName(argv[0],&TMP2name, length));*/
 
+	//List *head = NULL;
+	///*for (int i=0;i<argc;i++)
+	//	adding(&head, argv[i]);*/
+	//makeListOfFiles(argc, argv, &head);
+	//printLinkedList(head);
+	//for (int i = 3; i<argc; i++)
+	//	deleteByValue(&head, argv[i]);
 
-
-
+	/*printf("[WARNING:]В архиве сожержится лишь сигнатура, хотите удалить её? Y/N");
+	char answer;
+	answer = getchar();
+	printf("%c", answer);
+	if (answer == 'Y') printf("Y");
+	else printf("N");*/
 		if (toggleSwitch(argv[1], argc, argv))
 		{
 			printf("[ERROR] Была введена неизвестная опция");

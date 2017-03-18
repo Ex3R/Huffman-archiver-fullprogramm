@@ -67,7 +67,94 @@ int toggleSwitch(char* operation, int amount, char *param[])
 	//извлечь файл(ы) из архива
 	if (!strcmp(param[1], "-x"))
 	{
-		printf("1\n");
+		if ((checkUssd(param[2], SIGNATURE)) != 0)
+			return 0;
+		FILE *archive = NULL;
+		if ((archive = fopen(param[2], "rb")) == NULL)
+			OPEN_ERR
+		Info *ptrOnStruct = NULL;
+		if ((ptrOnStruct = (Info*)malloc(sizeof(Info))) == NULL)
+			ALLOC_MEMORY_ERR
+		
+		List *head = NULL;
+		List *tmp = NULL;
+		tmp = (List*)malloc(sizeof(List));
+		makeListOfFiles(amount, param, &head);
+		if (!head)
+		{
+			printf("[ERROR:] Список пуст");
+			return 0;
+		}
+		//иначе
+		unsigned __int64 size = getSize(archive);
+		if (_fseeki64_nolock(archive, SIZE_SIGNATURE, SEEK_SET) != 0)
+			FSEEK_ERR
+		int count;
+		while ((_ftelli64_nolock(archive)) != size)
+		{
+			if ((fread(&((ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1 , archive)) != 1)
+				READING_DATA_ERR
+			if ((fread(&((ptrOnStruct)->lengthName), SIZE_LENGTHNAME , 1 , archive))!= 1)
+				READING_DATA_ERR
+			if ((fread(&((ptrOnStruct)->name), ((ptrOnStruct)->lengthName), 1, archive)) != 1)
+				READING_DATA_ERR
+			if ((fread(&((ptrOnStruct)->flags), SIZE_FLAGS, 1, archive)) != 1)
+				READING_DATA_ERR
+			if ((fread(&((ptrOnStruct)->size), SIZE_SIZE, 1, archive)) != 1)
+				READING_DATA_ERR
+			char * tmpFileName = (char*)malloc(((ptrOnStruct)->lengthName) + 1);
+			strncpy((tmpFileName), (ptrOnStruct)->name, (ptrOnStruct)->lengthName);
+			tmpFileName[(ptrOnStruct)->lengthName] = '\0';
+			char flagForDeleting = 0;
+
+			//сравнение со списком файлов
+			tmp = head;
+			while (tmp)
+			{
+				//если они совпали
+				if (!strcmp(tmp->file, tmpFileName))
+				{
+					flagForDeleting = 1;
+					FILE *newFile = NULL;
+					char *data = NULL;
+					//как указывать полный путь?!?!?!
+					if ((newFile = fopen(tmp->file, "wb")) == NULL)
+						CREATE_FILE_ERR
+					if ((data = (char*)malloc(ptrOnStruct->size)) == NULL)
+					ALLOC_MEMORY_ERR
+					writeDataToFile(data, archive, newFile, NULL, ptrOnStruct->size);
+					free(data);
+					//free(tmp);
+					count =deleteByValue(&head, tmpFileName);
+					fflush(newFile);
+					if (fclose(newFile) == -1)
+						CLOSING_FILE_ERR
+					break;
+				}
+				tmp = tmp->next;
+			}
+			if (flagForDeleting == 0)
+			{
+				_fseeki64_nolock(archive, ptrOnStruct->size, SEEK_CUR);
+			}
+			else
+			{
+				flagForDeleting = 0;
+			}
+			//если не было совпадений
+
+			free(tmpFileName);
+		}
+		if (count == 1)  head = NULL;
+		
+		if (head)
+		{
+			printf("[WARNING]: Следующие файлы отсутствуют в архиве\n");
+			printLinkedList(head);
+		}
+		if (fclose(archive) == -1)
+			CLOSING_FILE_ERR
+		free(ptrOnStruct);
 		return 0;
 	}
 
@@ -77,7 +164,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		if (amount != 3)
 		{
 			printf("Неверное количество параметров для опции %s\n", "-l");
-			return 1;
+			return 0;
 		}
 
 		//проверка сигнатуры и расширения
@@ -93,7 +180,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		if (amount != 4)
 		{
 			printf("Неверное количество параметров для опции %s\n", DELETE);
-			return 1;
+			return 0;
 		}
 		if ((checkUssd(param[2],SIGNATURE))!= 0)
 			return 0;
@@ -108,7 +195,24 @@ int toggleSwitch(char* operation, int amount, char *param[])
 	//проверить целостность архива
 	if (!strcmp(param[1], "-t"))
 	{
-		printf("1\n");
+		if (amount != 3)
+		{
+			printf("Неверное количество параметров для опции %s\n", INTEGRITYCHECK);
+			return 0;
+		}
+		if ((checkUssd(param[2], SIGNATURE)) != 0)
+			return 0;
+		Info *ptrOnStruct = NULL;
+		if ((ptrOnStruct = (Info*)malloc(sizeof(Info))) == NULL)
+			ALLOC_MEMORY_ERR
+		char** file =NULL;
+		if (integrityСheck(param[2], &ptrOnStruct, &file) == 1)
+			printf("Архив %s повреждён, а именно на файле %s\n", param[2], file);
+		else printf("Архив %s цел\n", param[2]);
+		//TODO free
+		free(file);
+		file = NULL;
+		free(ptrOnStruct);
 		return 0;
 	}
 
@@ -116,7 +220,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 
 	if (!strcmp(param[1], "-help"))
 	{
-		printf("1\n");
+		printf("HELP!\n");
 		return 0;
 	}
 

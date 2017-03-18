@@ -1,10 +1,21 @@
 #include "header.h"
+char *tmpName(char* NameHHH,int length)
+{
+	char *TMP2name = malloc(length + 1);
+	int b = 0;
+	for (b; b < (length); b++)
+	{
+		TMP2name[b] = NameHHH[b];
+	}
+	TMP2name[b] = '\0';
+	return &TMP2name;
+}
 /*
 0- без ошибок
 1 - Данный файл имеет отличное от архивного расширения
 2- Данный файл имеет отличную от архивной сигнатуру
 */
-char checkUssd(char* archiveName, unsigned int ussd)
+char checkUssd(char* archiveName)
 {
 	//проверка расширения
 	int i = strlen(archiveName);
@@ -13,22 +24,21 @@ char checkUssd(char* archiveName, unsigned int ussd)
 	tmp = &archiveName[i++];
 	if (strcmp(tmp, EXTENTION))
 	{
-		printf("Данный файл имеет отличное от архивного расширения %s\n",EXTENTION);
+		printf("[ERROR:]Данный файл имеет отличное от архивного расширения %s\n",EXTENTION);
 		return 1;
 	}
 	FILE* archive = NULL;
 	if ((archive = fopen(archiveName, "rb")) == NULL)
-	OPEN_ERR
+		OPEN_ERR
 	//проверка сигнатуры
 	unsigned int curUssd = 0;
 	if (fread(&curUssd, SIZE_SIGNATURE, 1, archive) != 1)
 		READING_DATA_ERR
-	fflush(archive);
 	if (fclose(archive) == -1)
 		CLOSING_FILE_ERR
-	if (curUssd != ussd)
+	if (curUssd != SIGNATURE)
 	{
-		printf("Данный файл имеет отличную от архивной сигнатуру\n");
+		printf("[ERROR:]Данный файл имеет отличную от архивной сигнатуру\n");
 		return 2;
 	}
 	return 0;
@@ -41,7 +51,6 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 	unsigned int ussd = SIGNATURE;
 	if ((archive = fopen(archiveName,"rb")) == NULL)
 		CREATE_FILE_ERR
-	char path ="output/tmp.txt";
 	if ((tmp = fopen("output/tmp.txt", "wb")) == NULL)
 		CREATE_FILE_ERR
 	if ((fwrite(&ussd , SIZE_SIGNATURE , 1 ,tmp))!=1)
@@ -111,6 +120,94 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 		return 1;
 	}
 	else printf("Файл %s был успешно удалён из архива %s \n", fileName, archiveName);
+	//после удаления может остаться лишь одна сигнатура
+	if ((archive = fopen(archiveName, "rb")) == NULL)
+		OPEN_ERR
+	size = getSize(archive);
+	if (fclose(archive) == -1)
+		CLOSING_FILE_ERR
+	if (size == SIZE_SIGNATURE)
+	{
+		printf("[WARNING:]В архиве сожержится лишь сигнатура, хотите удалить архив? Y/N\n");
+		char answer;
+		answer = getchar();
+		if (answer == 'Y')
+		{
+			if (remove(archiveName) == -1)
+				perror("[ERROR]Could not delete %s\n", archiveName);
+		}
+		else return 0;
+	
+	}
+
 	
 	return 0;
+}
+//операции со списком
+void adding(List **head, char *fileName)
+{
+		List *cur = NULL;
+		cur = *head;
+		while (cur)
+		{
+			if (!strcmp(cur->file, fileName)) return;
+			cur = cur->next;
+		}
+		List *tmp = NULL;
+		tmp = (List*)malloc(sizeof(List));
+		(tmp->file) = (char*)malloc(strlen(fileName) + 1);
+		strncpy(tmp->file, fileName, strlen(fileName));
+		tmp->file[strlen(fileName)] = '\0';
+		tmp->next = *head;
+		*head = tmp;
+		return;
+}
+void printLinkedList(List *head) {
+	if (!head) {
+		printf("Spisok pust");
+	}
+	while (head) {
+		printf("%s\n", head->file);
+		head = head->next;
+	}
+}
+makeListOfFiles(int argc, char* argv[],List **head)
+{
+	for (int i = 3; i < argc; i++)
+	{
+		adding(head, argv[i]);
+	}
+}
+int  deleteByValue(List **head, char *fileName)
+{
+	if (*head == NULL)
+		return;
+	List *pred = NULL;
+	List *tmp = NULL;
+	tmp = (List*)malloc(sizeof(List));
+	pred = (List*)malloc(sizeof(List));
+	tmp = *head;
+	int count = 0;
+	while (tmp)
+	{
+		tmp = tmp->next;
+		count++;
+	}
+	tmp = *head;
+	//конец подсчёта количества элементов в списке
+	while (strcmp(tmp->file, fileName))
+	{
+		pred = tmp;
+		tmp = tmp->next;
+	}
+	if (!strcmp(tmp->file, fileName))
+	{
+		if (tmp==(*head))
+		{
+			*head = tmp->next;
+		}
+		else pred->next = tmp->next;
+		free(tmp);
+	}
+	return count;
 }

@@ -232,7 +232,6 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 					READING_DATA_ERR
 				if ((fread(&TMPlengthName, sizeof(char), 1, fin)) != 1)
 					READING_DATA_ERR
-				printf("%d - TMPcheckSum\n%d - TMPlengthName", TMPcheckSum, TMPlengthName);
 				if ((fread(&TMPname, TMPlengthName, 1, fin))!=1)
 					READING_DATA_ERR
 				if ((fread(&TMPflags, sizeof(char), 1, fin))!=1)
