@@ -37,5 +37,4 @@ void crc16(unsigned char * pcBlock, unsigned short len, unsigned short* crc)
 	};
 	while (len--)
 		*crc = (*crc << 8) ^ crc16Table[(*crc >> 8) ^ *pcBlock++];
-
 }

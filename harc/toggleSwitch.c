@@ -1,12 +1,14 @@
 #include "header.h"
-//где operation - argv[1];
-//0 -без ошибок
-//1- знак ошибки
+/*
+Parsing parameters:
+1 - error
+0 - without mistakes
+*/
 int toggleSwitch(char* operation, int amount, char *param[])
 {
 	if (amount<3)
 	{
-		printf("[ERROR]Количество параметром не может быть меньше 2\n");
+		printf("[ERROR:] Количество параметром не может быть меньше 2\n");
 		return 0;
 	}
 	//поместить файл(ы) в архив
@@ -33,7 +35,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 					//если совпал, то выводим сообщение и игнорим его
 					if (!strcmp(param[i], param[j]))
 					{
-						printf("[WARNING]Несколько раз встретился файл %s\n", param[i]);
+						printf("[WARNING:]Несколько раз встретился файл %s\n", param[i]);
 						dubl = 1;
 						break;
 					}
@@ -49,13 +51,8 @@ int toggleSwitch(char* operation, int amount, char *param[])
 				strarray[strcount++] = strdup(param[i]);
 			}
 		}
-		//вывод полученного спмска на экран
-		/* print the array of strings*/
-		//for (int i = 0; i < strcount; i++)
-		//	printf("strarray[%d] == %s\n", i, strarray[i]);
-
 		if (strcount > 0) addFiles(param[2], strarray, strcount, &ptrOnStruct);
-		else printf("[ERROR] No files for adding");
+		else printf("[ERROR:] No files for adding\n");
 		//free all
 		for (int i = 0; i < strcount; i++)
 			free(strarray[i]);
@@ -75,9 +72,9 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		Info *ptrOnStruct = NULL;
 		if ((ptrOnStruct = (Info*)malloc(sizeof(Info))) == NULL)
 			ALLOC_MEMORY_ERR
-		
 		List *head = NULL;
 		List *tmp = NULL;
+		unsigned short crc = CRC;
 		tmp = (List*)malloc(sizeof(List));
 		makeListOfFiles(amount, param, &head);
 		if (!head)
@@ -85,8 +82,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 			printf("[ERROR:] Список пуст");
 			return 0;
 		}
-		//иначе
-		unsigned __int64 size = getSize(archive);
+		UINT64 size = getSize(archive);
 		if (_fseeki64_nolock(archive, SIZE_SIGNATURE, SEEK_SET) != 0)
 			FSEEK_ERR
 		int count = 0;
@@ -100,13 +96,14 @@ int toggleSwitch(char* operation, int amount, char *param[])
 				READING_DATA_ERR
 			if ((fread(&((ptrOnStruct)->flags), SIZE_FLAGS, 1, archive)) != 1)
 				READING_DATA_ERR
+			if ((fread(&((ptrOnStruct)->compression), SIZE_FLAGS, 1, archive)) != 1)
+				READING_DATA_ERR
 			if ((fread(&((ptrOnStruct)->size), SIZE_SIZE, 1, archive)) != 1)
 				READING_DATA_ERR
 			char * tmpFileName = (char*)malloc(((ptrOnStruct)->lengthName) + 1);
 			strncpy((tmpFileName), (ptrOnStruct)->name, (ptrOnStruct)->lengthName);
 			tmpFileName[(ptrOnStruct)->lengthName] = '\0';
 			char flagForDeleting = 0;
-
 			//сравнение со списком файлов
 			tmp = head;
 			while (tmp)
@@ -127,10 +124,19 @@ int toggleSwitch(char* operation, int amount, char *param[])
 					if ((newFile = fopen(path, "wb")) == NULL)
 						CREATE_FILE_ERR
 					free(path);
-					if ((data = (char*)malloc(ptrOnStruct->size)) == NULL)
-						ALLOC_MEMORY_ERR
-					writeDataToFile(data, archive, newFile, NULL, ptrOnStruct->size);
-					free(data);
+					if ((ptrOnStruct)->flags == 0) {
+						if ((data = (char*)malloc(ptrOnStruct->size)) == NULL)
+							ALLOC_MEMORY_ERR
+							writeDataToFile(data, archive, newFile, &crc, ptrOnStruct->size);
+						//проверка crc
+						if (crc != (ptrOnStruct)->checkSum)
+							printf("[WARNING:] В процессе извлецения файл был повреждён:(\n");
+						free(data);
+					}
+					else
+					{
+						decode(archive, newFile);
+					}
 					//free(tmp);
 					count =deleteByValue(&head, tmpFileName);
 					fflush(newFile);
@@ -153,10 +159,9 @@ int toggleSwitch(char* operation, int amount, char *param[])
 			free(tmpFileName);
 		}
 		if (count == 1)  head = NULL;
-		
 		if (head)
 		{
-			printf("[WARNING]: Следующие файлы отсутствуют в архиве\n");
+			printf("[WARNING:] Следующие файлы отсутствуют в архиве\n");
 			printLinkedList(head);
 		}
 		if (fclose(archive) == -1)
@@ -164,13 +169,12 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		free(ptrOnStruct);
 		return 0;
 	}
-
 	//вывести информацию о файлах
 	if (!strcmp(param[1], "-l"))
 	{
 		if (amount != 3)
 		{
-			printf("Неверное количество параметров для опции %s\n", "-l");
+			printf("[WARNING:]Неверное количество параметров для опции %s\n", "-l");
 			return 0;
 		}
 		Info *ptrOnStruct = NULL;
@@ -189,7 +193,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 	{
 		if (amount != 4)
 		{
-			printf("Неверное количество параметров для опции %s\n", DELETE);
+			printf("[WARNING:]Неверное количество параметров для опции %s\n", DELETE);
 			return 0;
 		}
 		if ((checkUssd(param[2],SIGNATURE))!= 0)
@@ -207,7 +211,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 	{
 		if (amount != 3)
 		{
-			printf("Неверное количество параметров для опции %s\n", INTEGRITYCHECK);
+			printf("[WARNING:]Неверное количество параметров для опции %s\n", INTEGRITYCHECK);
 			return 0;
 		}
 		if ((checkUssd(param[2], SIGNATURE)) != 0)
@@ -219,20 +223,17 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		if (integrityСheck(param[2], &ptrOnStruct, &file) == 1)
 			printf("Архив %s повреждён, а именно на файле %s\n", param[2], file);
 		else printf("Архив %s цел\n", param[2]);
-		//TODO free
+		//TODO free???
 		free(file);
 		file = NULL;
 		free(ptrOnStruct);
 		return 0;
 	}
-
 	//вывести help
-
 	if (!strcmp(param[1], "-help"))
 	{
 		printf("HELP!\n");
 		return 0;
 	}
-
 	return 1;
 }

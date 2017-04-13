@@ -1,8 +1,8 @@
 #include "header.h";
-char readDataFromFile(char *buf, FILE *fin, unsigned short* crc, unsigned __int64 amount)
+char readDataFromFile(char *buf, FILE *fin, unsigned short* crc, UINT64 amount)
 {
-	unsigned __int64 temp = 0;
-	unsigned __int64 temp2 = amount;
+	UINT64 temp = 0;
+	UINT64 temp2 = amount;
 	int bufferSize = SizeOfBuf;
 	while (temp2 != 0)
 	{
@@ -16,7 +16,6 @@ char readDataFromFile(char *buf, FILE *fin, unsigned short* crc, unsigned __int6
 			temp = fread(buf, 1, bufferSize, fin);
 			temp2 -= temp;
 		}
-
 		if (crc)
 		{
 			crc16(buf, temp, crc);
@@ -31,7 +30,7 @@ char integrityÑheck(char *archiveName, Info **ptrOnStruct,char **file)
 	unsigned short currentCheckSum;
 	if ((archive = fopen(archiveName, "rb")) == NULL)
 		OPEN_ERR;
-	unsigned __int64 size =getSize(archive);
+	UINT64 size =getSize(archive);
 	if (_fseeki64_nolock(archive, SIZE_SIGNATURE, SEEK_SET) != 0)
 		FSEEK_ERR
 	char flagErorr = 0;
@@ -59,6 +58,11 @@ char integrityÑheck(char *archiveName, Info **ptrOnStruct,char **file)
 			(*file)[(*ptrOnStruct)->lengthName] = '\0';
 
 			if ((fread(&((*ptrOnStruct)->flags), SIZE_FLAGS, 1, archive)) != 1)
+			{
+				flagErorr = 1;
+				READING_DATA_ERR
+			}
+			if ((fread(&((*ptrOnStruct)->compression), SIZE_FLAGS, 1, archive)) != 1)
 			{
 				flagErorr = 1;
 				READING_DATA_ERR

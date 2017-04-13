@@ -1,53 +1,8 @@
 #include "header.h";
-//не рабочя((((((
-char* checkValidFiles(int amount, char * param[], int* strcount)
+/*Определение размера файла*/
+UINT64 getSize(FILE* file)
 {
-	int noFile = 0;
-	int dubl = 0;
-	FILE* tryOpen = NULL;
-	char **strarray = NULL;
-	(*strcount) = 0;
-	for (int i = 3; i != amount; i++)
-	{
-		if ((tryOpen = fopen(param[i], "rb")) == NULL)
-			//переходим на следующий
-			continue;
-		else
-		{
-			//сравнение на повтор
-			for (int j = 3; (j<i); j++)
-			{	
-				//если совпал, то выводим сообщение и игнорим его
-				if (!strcmp(param[i], param[j]))
-				{
-					printf("[WARNING]Несколько раз встретился файл %s\n", param[i]);
-					dubl = 1;
-					break;	
-				}		
-			}
-			if (dubl == 1)
-			{
-				dubl = 0;
-				continue;
-				//также пропускаем его
-			}
-		//добавление имени в массив
-		strarray = (char **)realloc(strarray, ((*strcount) + 1) * sizeof(char *));
-		strarray[(*strcount)++] = strdup(param[i]);
-		}
-	}
-	//!дописать free для всех элементов
-
-	/* print the array of strings*/ 
-	for (int i = 0; i < strcount; i++)
-		printf("strarray[%d] == %s\n", i, strarray[i]);
-	
-	return strarray;
-}
-/*Пределение размера файла*/
-unsigned __int64 getSize(FILE* file)
-{
-	unsigned __int64 endOFFile = 0;
+	UINT64 endOFFile = 0;
 	_fseeki64_nolock(file, 0, SEEK_END);
 	endOFFile = _ftelli64_nolock(file);
 	_fseeki64_nolock(file, 0, SEEK_SET);
@@ -58,10 +13,10 @@ unsigned __int64 getSize(FILE* file)
 0 - если ошибок при записи не возникло
 1- если ошибки
 */
-char writeDataToFile(char *buf, FILE *fin, FILE *fout, unsigned short* crc, unsigned __int64 amount)
+char writeDataToFile(char *buf, FILE *fin, FILE *fout, unsigned short* crc, UINT64 amount)
 {
-	unsigned __int64 temp = 0;
-	unsigned __int64 temp2 = amount;
+	UINT64 temp = 0;
+	UINT64 temp2 = amount;
 	int bufferSize = SizeOfBuf;
 	while (temp2!=0)
 	{
@@ -110,7 +65,7 @@ char isEmptyFile(char* fileName)
 		return 0;
 	}
 	//конец файла
-	unsigned __int64 endOFFile = getSize(file);
+	UINT64 endOFFile = getSize(file);
 	if (fclose(file) == -1)
 		CLOSING_FILE_ERR
 	if (endOFFile == 0)
@@ -119,15 +74,34 @@ char isEmptyFile(char* fileName)
 	}
 	else return 2;
 }
+/*
+0 - not compress
+1 - compress
+*/
+char compressOrNot(UINT64 size)
+{
+	if (size > LIMIT_FOR_COMPRESSION)
+		return 1;
+	else return 0;
+}
+double compressionRatio(double firstSize, double lastSize)
+{
+	double percent;
+	percent = (firstSize - lastSize) / firstSize * 100;
+	return percent;
+}
 int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrOnStruct)
 {
-	unsigned short crc = 0xFFFF;
-	const unsigned int ussd = 111;
+	unsigned short crc = CRC;
+	const unsigned int ussd = SIGNATURE;
 	struct _stat64 info;
-	unsigned __int64 pos = 0;
+	UINT64 posForWRCRC;//позиция для записи crc
+	UINT64 posForWRSize;
+	UINT64 realSize;
+	char percentCompression;
 	char *data = NULL;
 	FILE *fin = NULL, *tmp=NULL, *fout = NULL;
-	int makeTmpArchieve;//создавать временный архив или нет
+	int makeTmpArchieve;//создавать временный архив или нет(флаг)
 	int u = 0; 
 	switch (makeTmpArchieve = isEmptyFile(archiveName))
 	{
@@ -150,54 +124,65 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 	if ((makeTmpArchieve == 0) || (makeTmpArchieve == 1))
 	{
 		if ((fout = fopen(archiveName, "rb+")) == NULL)
-			OPEN_ERR
+			CREATE_FILE_ERR
 		for (u; u < amountOfFiles; u++)
 		{
-			_stat64(fileNames[u], &info);
-			if ((fin = fopen(fileNames[u], "rb")) == NULL)
-				OPEN_ERR
-			if ((data = (char*)malloc(info.st_size)) == NULL)
-				ALLOC_MEMORY_ERR
-			//заполнение полей структуры
-			
-			(*ptrOnStruct)->lengthName = strlen(shortNameOnly(fileNames[u])); //длина имени файла
-			strcpy((*ptrOnStruct)->name, shortNameOnly(fileNames[u]));
-			(*ptrOnStruct)->flags = 0;
-			(*ptrOnStruct)->size = info.st_size;
-
+				_stat64(fileNames[u], &info);
+				if ((fin = fopen(fileNames[u], "rb")) == NULL)
+					OPEN_ERR
+				//заполнение полей структуры
+				(*ptrOnStruct)->lengthName = strlen(shortNameOnly(fileNames[u])); //длина имени файла
+				strcpy((*ptrOnStruct)->name, shortNameOnly(fileNames[u]));
+				(*ptrOnStruct)->size = info.st_size;
+				if (compressOrNot((*ptrOnStruct)->size))
+					(*ptrOnStruct)->flags = COMPRESSED;
+				else (*ptrOnStruct)->flags = NOTCOMPRESSED;
+				(*ptrOnStruct)->compression = 0;
 			//запись данных в архив
-			fflush(fout);
-			_fseeki64_nolock(fout, 0, SEEK_END);
-			 pos = _ftelli64_nolock(fout);
-			(*ptrOnStruct)->checkSum = crc;//контрольная сумма
-			if ((fwrite(&((*ptrOnStruct)->checkSum), sizeof(unsigned short), 1, fout)) != 1)
-				WRITING_DATA_ERR
-			if ((fwrite(&((*ptrOnStruct)->lengthName), sizeof(char), 1, fout)) != 1)
-				WRITING_DATA_ERR
-			if ((fwrite(&((*ptrOnStruct)->name), (*ptrOnStruct)->lengthName, 1, fout)) != 1)
-				WRITING_DATA_ERR
-			if (fwrite(&((*ptrOnStruct)->flags), sizeof(char), 1, fout) != 1)
-				WRITING_DATA_ERR
-			if (fwrite(&((*ptrOnStruct)->size), sizeof(unsigned __int64), 1, fout) != 1)
-				WRITING_DATA_ERR
-			crc = 0xFFFF;
-			writeDataToFile(data,fin,fout,&crc, (*ptrOnStruct)->size);
-			fflush(fout);
-			//сдвиг обратно для записи контрольной суммы
-			_fseeki64_nolock(fout, pos, SEEK_SET);
-			(*ptrOnStruct)->checkSum = crc;//контрольная сумма
-			if ((fwrite(&((*ptrOnStruct)->checkSum),sizeof(unsigned short), 1, fout)) != 1)
-			WRITING_DATA_ERR
-			_fseeki64_nolock(fout,0,SEEK_END);
-			//очищение буфера, в котором хранится файл
-			free(data);
-			//закрытие очередного файла, который записали
-			if (fclose(fin) == -1)
-				CLOSING_FILE_ERR
+					_fseeki64_nolock(fout, 0, SEEK_END);
+					 posForWRCRC = _ftelli64_nolock(fout);
+					(*ptrOnStruct)->checkSum = crc;//контрольная сумма
+					if ((fwrite(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1, fout)) != 1)
+						WRITING_DATA_ERR
+					if ((fwrite(&((*ptrOnStruct)->lengthName), SIZE_LENGTHNAME, 1, fout)) != 1)
+						WRITING_DATA_ERR
+					if ((fwrite(&((*ptrOnStruct)->name), (*ptrOnStruct)->lengthName, 1, fout)) != 1)
+						WRITING_DATA_ERR
+					if (fwrite(&((*ptrOnStruct)->flags), SIZE_FLAGS, 1, fout) != 1)
+						WRITING_DATA_ERR
+					if (fwrite(&((*ptrOnStruct)->compression), SIZE_FLAGS, 1, fout) != 1)
+						WRITING_DATA_ERR
+					posForWRSize = _ftelli64_nolock(fout);
+					if (fwrite(&((*ptrOnStruct)->size), SIZE_SIZE, 1, fout) != 1)
+						WRITING_DATA_ERR
+					//запись файла
+					crc = CRC;
+					if (compressOrNot((*ptrOnStruct)->size))
+						encode(fin, fout, getSize(fin),&crc);
+					else {
+						if ((data = (char*)malloc(info.st_size)) == NULL)
+							ALLOC_MEMORY_ERR
+						writeDataToFile(data, fin, fout, &crc, (*ptrOnStruct)->size);
+						free(data);
+					}
+					fflush(fout);
+					realSize = _ftelli64_nolock(fout) - posForWRSize - SIZE_SIZE;
+					percentCompression = (char)(compressionRatio((double)(*ptrOnStruct)->size, (double)realSize));
+					//сдвиг для записи размера
+					// -1 для записи процента сжатия
+					_fseeki64_nolock(fout,posForWRSize-1, SEEK_SET);
+					if ((fwrite(&percentCompression, SIZE_FLAGS, 1, fout)) != 1)
+						WRITING_DATA_ERR
+					if ((fwrite(&realSize, SIZE_SIZE, 1, fout)) != 1)
+						WRITING_DATA_ERR
+					//сдвиг обратно для записи контрольной суммы
+					_fseeki64_nolock(fout, posForWRCRC, SEEK_SET);
+					(*ptrOnStruct)->checkSum = crc;//контрольная сумма
+					if ((fwrite(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1, fout)) != 1)
+						WRITING_DATA_ERR
+					_fseeki64_nolock(fout,0,SEEK_END);
 		}
-	//закрытие архива
-	if (fclose(fout) == -1)
-		CLOSING_FILE_ERR
+		fcloseall;
 	}
 	//если нужно создавать временный архив
 	else
@@ -209,43 +194,37 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 			OPEN_ERR
 		//запись сигнатуры во временный архив
 		if ((fwrite(&(ussd), sizeof(unsigned int), 1, tmp))!= 1)
-			WRITING_DATA_ERR
-		fflush(tmp);
+			WRITING_DATA_ERR fflush(tmp);
 		//определение размера архива
-		unsigned __int64 endOFFile = getSize(fin);
+		UINT64 endOFFile = getSize(fin);
 		//временные переменные
 		unsigned int TMPussd = 0;
-		unsigned short TMPcheckSum = 0;
-		char TMPlengthName = 0;
-		char TMPname[256];
-		char TMPflags = 0;
-		unsigned __int64 TMPsize = 0;
 		//чтение сигнатуры
-		if (fread(&TMPussd, sizeof(unsigned int), 1, fin) != 1)
+		if (fread(&TMPussd, SIZE_SIGNATURE, 1 , fin) != 1)
 			READING_DATA_ERR
 		while ((_ftelli64_nolock(fin)) != endOFFile)
 		{
 			//флаг = 1 , если совпадёт хоть один файл
 			int flag = 0;
 			int y;//переменная для цикла for(поиск повторов)
-				if ((fread(&TMPcheckSum, sizeof(unsigned short), 1, fin))!=1)
-					READING_DATA_ERR
-				if ((fread(&TMPlengthName, sizeof(char), 1, fin)) != 1)
-					READING_DATA_ERR
-				if ((fread(&TMPname, TMPlengthName, 1, fin))!=1)
-					READING_DATA_ERR
-				if ((fread(&TMPflags, sizeof(char), 1, fin))!=1)
-					READING_DATA_ERR
-				if ((fread(&TMPsize, sizeof(unsigned __int64), 1, fin))!=1)
-					READING_DATA_ERR
+			if ((fread(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1 , fin)) != 1)
+				READING_DATA_ERR
+			if ((fread(&((*ptrOnStruct)->lengthName), SIZE_LENGTHNAME , 1 ,fin))!= 1)
+				READING_DATA_ERR
+			if ((fread(&((*ptrOnStruct)->name), ((*ptrOnStruct)->lengthName), 1, fin)) != 1)
+				READING_DATA_ERR
+			if ((fread(&((*ptrOnStruct)->flags), SIZE_FLAGS, 1, fin)) != 1)
+				READING_DATA_ERR
+			if ((fread(&((*ptrOnStruct)->compression), SIZE_FLAGS, 1, fin)) != 1)
+				READING_DATA_ERR
+			if ((fread(&((*ptrOnStruct)->size), SIZE_SIZE, 1, fin)) != 1)
+				READING_DATA_ERR
 				y = 0;
-				char *TMP2name = malloc(TMPlengthName+1);
-				int b = 0;
-				for (b; b < TMPlengthName; b++)
-				{
-					TMP2name[b] = TMPname[b];
-				}
-				TMP2name[b] = '\0';
+				char *TMP2name = NULL;
+				if ((TMP2name = (char*)malloc(((*ptrOnStruct)->lengthName) + 1)) == NULL)
+					ALLOC_MEMORY_ERR
+				strncpy((TMP2name), (*ptrOnStruct)->name, (*ptrOnStruct)->lengthName);
+				TMP2name[(*ptrOnStruct)->lengthName] = '\0';
 				for (y; y < amountOfFiles; y++)
 				{
 					if (!strcmp(TMP2name, shortNameOnly(fileNames[y])))
@@ -259,7 +238,7 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 				if (flag)
 				{
 					//нужно сдвинуться на размер файла
-					_fseeki64_nolock(fin, TMPsize, SEEK_CUR);
+					_fseeki64_nolock(fin, (*ptrOnStruct)->size, SEEK_CUR);
 					flag = 0;
 					free(data);
 					continue;
@@ -267,89 +246,118 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 				else
 				{
 				//записываем во временный архив
-				fflush(tmp);
 				_fseeki64_nolock(tmp, 0, SEEK_END);
-				pos = _ftelli64_nolock(tmp);
-				TMPcheckSum = crc;//контрольная сумма
-				if ((fwrite(&TMPcheckSum, sizeof(unsigned short), 1, tmp)) != 1)
+				posForWRCRC = _ftelli64_nolock(tmp);
+				(*ptrOnStruct)->checkSum = crc;
+				if ((fwrite(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1, tmp)) != 1)
 				WRITING_DATA_ERR
-				if ((fwrite(&TMPlengthName, sizeof(char), 1, tmp)) != 1)
-					WRITING_DATA_ERR
-				if ((fwrite(&TMPname, TMPlengthName, 1, tmp)) != 1)
-					WRITING_DATA_ERR
-				if (fwrite(&TMPflags, sizeof(char), 1, tmp) != 1)
-					WRITING_DATA_ERR
-				if (fwrite(&TMPsize, sizeof(unsigned __int64), 1, tmp) != 1)
-					WRITING_DATA_ERR
-				if ((data = (char*)malloc(TMPsize)) == NULL)
-					ALLOC_MEMORY_ERR
-				//запись самого файла
-				crc = 0xFFFF;
-				writeDataToFile(data,fin,tmp,&crc, TMPsize);
-				fflush(tmp);
-				//сдвиг обратно для записи контрольной суммы
-				_fseeki64_nolock(tmp, pos, SEEK_SET);
-				TMPcheckSum = crc;//контрольная сумма
-				if ((fwrite(&TMPcheckSum, sizeof(unsigned short), 1, tmp)) != 1)
-					WRITING_DATA_ERR
-				_fseeki64_nolock(tmp,0,SEEK_END);
-				free(data);
+				if ((fwrite(&((*ptrOnStruct)->lengthName), SIZE_LENGTHNAME, 1, tmp)) != 1)
+				WRITING_DATA_ERR
+				if ((fwrite(&((*ptrOnStruct)->name), (*ptrOnStruct)->lengthName, 1, tmp)) != 1)
+				WRITING_DATA_ERR
+				if (fwrite(&((*ptrOnStruct)->flags), SIZE_FLAGS, 1, tmp) != 1)
+				WRITING_DATA_ERR
+				if (fwrite(&((*ptrOnStruct)->compression), SIZE_FLAGS, 1, tmp) != 1)
+				WRITING_DATA_ERR
+				posForWRSize = _ftelli64_nolock(tmp);
+				if (fwrite(&((*ptrOnStruct)->size), SIZE_SIZE, 1, tmp) != 1)
+				WRITING_DATA_ERR
+						//запись самого файла
+						crc = CRC;
+						if (compressOrNot((*ptrOnStruct)->size))
+							encode(fin, tmp, getSize(fin),&crc);
+						else {
+							if ((data = (char*)malloc((*ptrOnStruct)->size)) == NULL)
+								ALLOC_MEMORY_ERR
+							writeDataToFile(data, fin, tmp, &crc, (*ptrOnStruct)->size);
+							free(data);
+						}
+						fflush(tmp);
+						realSize = _ftelli64_nolock(tmp) - posForWRSize - SIZE_SIZE;
+						percentCompression = (char)(compressionRatio((double)(*ptrOnStruct)->size, (double)realSize));
+						//сдвиг для записи размера
+						_fseeki64_nolock(tmp, posForWRSize - 1, SEEK_SET);
+						if ((fwrite(&percentCompression, SIZE_FLAGS, 1, tmp)) != 1)
+							WRITING_DATA_ERR
+						if ((fwrite(&realSize, SIZE_SIZE, 1, tmp)) != 1)
+							WRITING_DATA_ERR
+						//сдвиг обратно для записи контрольной суммы
+						_fseeki64_nolock(tmp, posForWRCRC, SEEK_SET);
+						(*ptrOnStruct)->checkSum = crc;//контрольная сумма
+						if ((fwrite(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1, tmp)) != 1)
+							WRITING_DATA_ERR
+						_fseeki64_nolock(tmp,0,SEEK_END);
 				}
 			}
 		//закрываем наш архив
-			if (fclose(fin) == -1)
-				CLOSING_FILE_ERR
+		if (fclose(fin) == -1)
+		CLOSING_FILE_ERR
 		//теперь во временный нужно переписать то, что было в основном
 			for (int t = 0; t < amountOfFiles; t++)
 			{
 				_stat64(fileNames[t], &info);
-				if ((data = (char*)malloc(info.st_size)) == NULL)
-				ALLOC_MEMORY_ERR
 				if ((fin = fopen(fileNames[t], "rb")) == NULL)
 					OPEN_ERR
 				//заполнение данных
 				(*ptrOnStruct)->checkSum = crc;
-				(*ptrOnStruct)->lengthName = strlen(shortNameOnly(fileNames[t])); //длина имени файла
+				(*ptrOnStruct)->lengthName = strlen(shortNameOnly(fileNames[t]));
 				strcpy((*ptrOnStruct)->name, shortNameOnly(fileNames[t]));
-				(*ptrOnStruct)->flags = 0;
 				(*ptrOnStruct)->size = info.st_size;
+				if (compressOrNot((*ptrOnStruct)->size))
+					(*ptrOnStruct)->flags = COMPRESSED;
+				else (*ptrOnStruct)->flags = NOTCOMPRESSED;
+				(*ptrOnStruct)->compression = 0;
 				//запись данных
-				fflush(tmp);
 				_fseeki64_nolock(tmp, 0, SEEK_END);
-				pos = _ftelli64_nolock(tmp);
-				if ((fwrite(&((*ptrOnStruct)->checkSum), sizeof(unsigned short), 1, tmp)) != 1)
-					WRITING_DATA_ERR
-				if ((fwrite(&((*ptrOnStruct)->lengthName), sizeof(char), 1, tmp)) != 1)
-					WRITING_DATA_ERR
-				if ((fwrite(&((*ptrOnStruct)->name), strlen((*ptrOnStruct)->name), 1, tmp)) != 1)
-					WRITING_DATA_ERR
-				if (fwrite(&((*ptrOnStruct)->flags), sizeof(char), 1, tmp) != 1)
-					WRITING_DATA_ERR
-				if (fwrite(&((*ptrOnStruct)->size), sizeof((*ptrOnStruct)->size), 1, tmp) != 1)
-					WRITING_DATA_ERR
+				posForWRCRC = _ftelli64_nolock(tmp);
+				if ((fwrite(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1, tmp)) != 1)
+				WRITING_DATA_ERR
+				if ((fwrite(&((*ptrOnStruct)->lengthName), SIZE_LENGTHNAME, 1, tmp)) != 1)
+				WRITING_DATA_ERR
+				if ((fwrite(&((*ptrOnStruct)->name), (*ptrOnStruct)->lengthName, 1, tmp)) != 1)
+				WRITING_DATA_ERR
+				if (fwrite(&((*ptrOnStruct)->flags), SIZE_FLAGS, 1, tmp) != 1)
+				WRITING_DATA_ERR
+				if (fwrite(&((*ptrOnStruct)->compression), SIZE_FLAGS, 1, tmp) != 1)
+				WRITING_DATA_ERR
+				posForWRSize = _ftelli64_nolock(tmp);
+				if (fwrite(&((*ptrOnStruct)->size), SIZE_SIZE, 1, tmp) != 1)
+				WRITING_DATA_ERR
 				//чтение и запись самого файла
-				crc = 0xFFFF;
-				writeDataToFile(data, fin, tmp, &crc, (*ptrOnStruct)->size);
+				crc = CRC;
+				if (compressOrNot((*ptrOnStruct)->size))
+					encode(fin, tmp, getSize(fin), &crc);
+				else {
+					if ((data = (char*)malloc((*ptrOnStruct)->size)) == NULL)
+						ALLOC_MEMORY_ERR
+						writeDataToFile(data, fin, tmp, &crc, (*ptrOnStruct)->size);
+					free(data);
+				}
+				fflush(tmp);
+				realSize = _ftelli64_nolock(tmp) - posForWRSize - SIZE_SIZE;
+				percentCompression = (char)(compressionRatio((double)(*ptrOnStruct)->size, (double)realSize));
+				_fseeki64_nolock(tmp, posForWRSize - 1, SEEK_SET);
+				if ((fwrite(&percentCompression, SIZE_FLAGS, 1, tmp)) != 1)
+					WRITING_DATA_ERR
+				if ((fwrite(&realSize, SIZE_SIZE, 1, tmp)) != 1)
+					WRITING_DATA_ERR
 				//сдвиг обратно для записи контрольной суммы
-				_fseeki64_nolock(tmp, pos, SEEK_SET);
+				_fseeki64_nolock(tmp, posForWRCRC, SEEK_SET);
 				(*ptrOnStruct)->checkSum = crc;//контрольная сумма
 				if ((fwrite(&((*ptrOnStruct)->checkSum), sizeof(unsigned short), 1, tmp)) != 1)
 					WRITING_DATA_ERR
 				_fseeki64_nolock(tmp, 0, SEEK_END);
-				//очищение буфера, в котором хранится файл
-				free(data);
 				if (fclose(fin) == -1)
 					CLOSING_FILE_ERR
 			}
-	
+		if (fclose(tmp) == -1)
+			CLOSING_FILE_ERR
 			//удалить архив переименовать temp
-			if (fclose(tmp) == -1)
-				CLOSING_FILE_ERR
 			if (remove(archiveName) == -1)
-				perror("[ERROR]Could not delete %s\n",archiveName);
+				perror("[ERROR]:Could not delete %s\n",archiveName);
 			if (rename("output/tmp.txt", archiveName) == -1)
-				printf("[ERROR]Не удалось переименовать временный архив\n");
+				printf("[ERROR]:Не удалось переименовать временный архив\n");
 	}
-return 0;
+	return 0;
 }
 

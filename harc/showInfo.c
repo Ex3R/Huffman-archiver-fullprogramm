@@ -7,7 +7,7 @@ void showInfo(char* archiveName, Info **ptrOnStruct)
 		OPEN_ERR
 	if ((infoAboutFiles = fopen("output/infoAboutFiles.txt", "wb")) == NULL)
 		CREATE_FILE_ERR;
-	unsigned __int64 endOFFile = getSize(archive);
+	UINT64 endOFFile = getSize(archive);
 	if (endOFFile == 0)
 	{
 		printf("[WARNING:]Архив пуст:(\n");
@@ -26,6 +26,8 @@ void showInfo(char* archiveName, Info **ptrOnStruct)
 				READING_DATA_ERR
 			if ((fread(&((*ptrOnStruct)->flags), SIZE_FLAGS, 1, archive)) != 1)
 				READING_DATA_ERR
+			if ((fread(&((*ptrOnStruct)->compression), SIZE_FLAGS, 1, archive)) != 1)
+				READING_DATA_ERR
 			if ((fread(&((*ptrOnStruct)->size), SIZE_SIZE, 1, archive)) != 1)
 				READING_DATA_ERR
 			if (_fseeki64_nolock(archive, (*ptrOnStruct)->size, SEEK_CUR)!=0)
@@ -33,9 +35,11 @@ void showInfo(char* archiveName, Info **ptrOnStruct)
 	//запись информации
 	for(int i=0; (i<(*ptrOnStruct)->lengthName);i++)
 		fprintf(infoAboutFiles, "%c", (*ptrOnStruct)->name[i]);
-	fprintf(infoAboutFiles, "  %llu  ", (*ptrOnStruct)->size);
-	if ((*ptrOnStruct)->flags == ZERO) fprintf(infoAboutFiles, "%s", "Не сжатый\n");
-		else fprintf(infoAboutFiles, "%s", "Cжатый\n");
+	fprintf(infoAboutFiles, "  %   llu    ", (*ptrOnStruct)->size);
+	if ((*ptrOnStruct)->flags == ZERO) fprintf(infoAboutFiles, "%s", "Не сжатый   ");
+		else fprintf(infoAboutFiles, "%s", "Cжатый   ");
+	fprintf(infoAboutFiles, "%d%s", (*ptrOnStruct)->compression, "%\n");
+	fflush(archive);
 	}
 	if (fclose(archive) == -1)
 		CLOSING_FILE_ERR

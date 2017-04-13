@@ -148,6 +148,8 @@
   <ItemGroup>
     <ClCompile Include="addFiles.c" />
     <ClCompile Include="checkSum.c" />
+    <ClCompile Include="compression.c" />
+    <ClCompile Include="decompression.c" />
     <ClCompile Include="errorsAndWarnings.h" />
     <ClCompile Include="extractionFiles.c" />
     <ClCompile Include="main.c" />

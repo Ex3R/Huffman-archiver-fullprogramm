@@ -7,7 +7,6 @@
 char checkUssd(char* archiveName)
 {
 	//проверка расширения
-	//TODO more shorter
 	int i = strlen(archiveName);
 	for (i; ((archiveName[i] != '.') && (i + 1)); i--);
 	char* tmp = NULL;
@@ -24,13 +23,13 @@ char checkUssd(char* archiveName)
 	unsigned int curUssd = 0;
 	if (fread(&curUssd, SIZE_SIGNATURE, 1, archive) != 1)
 		READING_DATA_ERR
-	if (fclose(archive) == -1)
-		CLOSING_FILE_ERR
 	if (curUssd != SIGNATURE)
 	{
 		printf("[ERROR:]Данный файл имеет отличную от архивной сигнатуру\n");
 		return 2;
 	}
+	if (fclose(archive) == -1)
+		CLOSING_FILE_ERR
 	return 0;
 }
 char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
@@ -46,10 +45,11 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 	if ((fwrite(&ussd , SIZE_SIGNATURE , 1 ,tmp))!=1)
 				WRITING_DATA_ERR
 	_fflush_nolock(tmp);
-	unsigned __int64 size =getSize(archive);
+	UINT64 size =getSize(archive);
 	char flagFounded = 0;
 	if (_fseeki64_nolock(archive, SIZE_SIGNATURE, SEEK_SET) != 0)
 		FSEEK_ERR
+
 		while ((_ftelli64_nolock(archive)) != size)
 		{
 			if ((fread(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1 , archive)) != 1)
@@ -59,6 +59,8 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 			if ((fread(&((*ptrOnStruct)->name), ((*ptrOnStruct)->lengthName), 1, archive)) != 1)
 				READING_DATA_ERR
 			if ((fread(&((*ptrOnStruct)->flags), SIZE_FLAGS, 1, archive)) != 1)
+				READING_DATA_ERR
+			if ((fread(&((*ptrOnStruct)->compression), SIZE_FLAGS, 1, archive)) != 1)
 				READING_DATA_ERR
 			if ((fread(&((*ptrOnStruct)->size), SIZE_SIZE, 1, archive)) != 1)
 				READING_DATA_ERR
@@ -88,6 +90,8 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 				WRITING_DATA_ERR
 			if (fwrite(&((*ptrOnStruct)->flags), SIZE_FLAGS, 1, tmp) != 1)
 				WRITING_DATA_ERR
+			if (fwrite(&((*ptrOnStruct)->compression), SIZE_FLAGS, 1, tmp) != 1)
+				WRITING_DATA_ERR
 			if (fwrite(&((*ptrOnStruct)->size), SIZE_SIZE, 1, tmp) != 1)
 				WRITING_DATA_ERR
 			writeDataToFile(data,archive,tmp,NULL, (*ptrOnStruct)->size);
@@ -109,6 +113,7 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 		return 1;
 	}
 	else printf("[SUCCSESS:]Файл %s был успешно удалён из архива %s \n", fileName, archiveName);
+	
 	//после удаления может остаться лишь одна сигнатура
 	if ((archive = fopen(archiveName, "rb")) == NULL)
 		OPEN_ERR

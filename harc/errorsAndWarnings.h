@@ -4,28 +4,24 @@
 	printf("[ERROR]Ошибка при открытии файла\n");   \
 	return 1;										\
 }				
-
 //2)ОШИБКА ПРИ ВЫДЕЛЕНИИ ПАМЯТИ
 #define ALLOC_MEMORY_ERR								\
 {														\
 	printf("[ERROR]Ошибка при выделении памяти\n");     \
 	return 1;										    \
 }				
-
 //3)ОШИБКА ПРИ ЗАПИСИ ДАННЫХ
 #define WRITING_DATA_ERR								  \
 {														  \
 	printf("[ERROR]Ошибка при записи данных\n");		  \
 	return 1;											  \
 }		
-
 //4)ОШИБКА ПРИ ЧТЕНИИ ДАННЫХ
 #define READING_DATA_ERR								\
 {													    \
 	printf("[ERROR]Ошибка при чтении данных\n");        \
 	return 1;								            \
 }	
-
 //5)ОШИБКА ПРИ ЗАКРЫТИИ ФАЙЛА
 #define CLOSING_FILE_ERR					            \
 {											            \
