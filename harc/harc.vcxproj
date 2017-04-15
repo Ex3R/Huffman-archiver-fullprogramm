@@ -152,6 +152,7 @@
     <ClCompile Include="decompression.c" />
     <ClCompile Include="errorsAndWarnings.h" />
     <ClCompile Include="extractionFiles.c" />
+    <ClCompile Include="GenerateUniqTMPName.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="integrityСheck.c" />
     <ClCompile Include="toggleSwitch.c" />

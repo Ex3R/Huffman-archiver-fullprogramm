@@ -13,7 +13,7 @@ char checkUssd(char* archiveName)
 	tmp = &archiveName[i++];
 	if (strcmp(tmp, EXTENTION))
 	{
-		printf("[ERROR:]Данный файл имеет отличное от архивного расширения %s\n",EXTENTION);
+		printf("[ERROR:]Файл %s имеет отличное от архивного расширения %s\n",archiveName, EXTENTION);
 		return 1;
 	}
 	FILE* archive = NULL;
@@ -38,9 +38,16 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 	FILE *tmp = NULL;
 	char *data = NULL;
 	unsigned int ussd = SIGNATURE;
+	if (accessRights(archiveName) != 1) {
+		printf("[WARNING:]Архив %s не имеет прав на чтение и запись\n", archiveName);
+		return 1;
+	}
 	if ((archive = fopen(archiveName,"rb")) == NULL)
 		OPEN_ERR
-	if ((tmp = fopen("output/tmp.txt", "wb")) == NULL)
+	//создание временного файла
+	char *tmpArchiveName =NULL;
+	tmpArchiveName = uniqName();
+	if ((tmp = fopen(tmpArchiveName, "wb")) == NULL)
 		CREATE_FILE_ERR
 	if ((fwrite(&ussd , SIZE_SIGNATURE , 1 ,tmp))!=1)
 				WRITING_DATA_ERR
@@ -103,16 +110,16 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 		CLOSING_FILE_ERR
 	//TODO уникальное имя для темпа
 	if (remove(archiveName) == -1)
-		perror("[ERROR]Could not delete %s\n", archiveName);
-	if (rename("output/tmp.txt", archiveName) == -1)
-		printf("[ERROR]Не удалось переименовать временный архив\n");
+		perror("[ERROR:] Could not delete %s\n", archiveName);
+	if (rename(tmpArchiveName, archiveName) == -1)
+		printf("[ERROR:] Не удалось переименовать временный архив\n");
 	//если файл не нашли
 	if (!flagFounded)
 	{
-		printf("[WARNING]Файл %s отсутствует в архиве %s \n", fileName, archiveName);
+		printf("[WARNING:] Файл %s отсутствует в архиве %s \n", fileName, archiveName);
 		return 1;
 	}
-	else printf("[SUCCSESS:]Файл %s был успешно удалён из архива %s \n", fileName, archiveName);
+	else printf("[SUCCSESS:] Файл %s был успешно удалён из архива %s \n", fileName, archiveName);
 	
 	//после удаления может остаться лишь одна сигнатура
 	if ((archive = fopen(archiveName, "rb")) == NULL)
@@ -122,7 +129,7 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 		CLOSING_FILE_ERR
 	if (size == SIZE_SIGNATURE)
 	{
-		printf("[WARNING:]В архиве сожержится лишь сигнатура, хотите удалить архив? Y/N\n");
+		printf("[WARNING:] В архиве сожержится лишь сигнатура, хотите удалить архив? Y/N\n");
 		char answer;
 		answer = getchar();
 		if (answer == 'Y')

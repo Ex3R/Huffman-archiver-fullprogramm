@@ -187,10 +187,16 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 	//если нужно создавать временный архив
 	else
 	{
+		if (accessRights(archiveName) != 1) {
+			printf("[WARNING:]Архив %s не имеет прав на чтение и запись\n",archiveName);
+			return 1;
+		}
 		if ((fin = fopen(archiveName, "rb+")) == NULL)
 			OPEN_ERR
 		//создание временного файла
-		if ((tmp = fopen("output/tmp.txt", "wb+")) == NULL)
+		char *tmpArchiveName =NULL;
+		tmpArchiveName = uniqName();
+		if ((tmp = fopen(tmpArchiveName, "wb+")) == NULL)
 			OPEN_ERR
 		//запись сигнатуры во временный архив
 		if ((fwrite(&(ussd), sizeof(unsigned int), 1, tmp))!= 1)
@@ -291,7 +297,7 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 			}
 		//закрываем наш архив
 		if (fclose(fin) == -1)
-		CLOSING_FILE_ERR
+			CLOSING_FILE_ERR
 		//теперь во временный нужно переписать то, что было в основном
 			for (int t = 0; t < amountOfFiles; t++)
 			{
@@ -355,7 +361,7 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 			//удалить архив переименовать temp
 			if (remove(archiveName) == -1)
 				perror("[ERROR]:Could not delete %s\n",archiveName);
-			if (rename("output/tmp.txt", archiveName) == -1)
+			if (rename(tmpArchiveName, archiveName) == -1)
 				printf("[ERROR]:Не удалось переименовать временный архив\n");
 	}
 	return 0;

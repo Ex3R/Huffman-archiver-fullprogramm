@@ -184,20 +184,20 @@ UINT64 writeBits(FILE *file, int *position, unsigned char *buffer, char *value,u
 /*Функция записи дерева в файл
 0-если узел, 1 - если лист, за 1 всегда следует код символа
 */
-void WriteTree(Tree* root, unsigned char *buffer, int *position, FILE *outputFile)
+void WriteTree(Tree* root, unsigned char *buffer, int *position, FILE *outputFile,unsigned short *crc)
 {
 	char SymBuf[] = { "00000000" };
 
 	if (root->symbol == -1)
 	{
-		writeBits(outputFile, position, buffer, "0",NULL);
-		WriteTree(root->left, buffer, position, outputFile);
-		WriteTree(root->right, buffer, position, outputFile);
+		writeBits(outputFile, position, buffer, "0",crc);
+		WriteTree(root->left, buffer, position, outputFile,crc);
+		WriteTree(root->right, buffer, position, outputFile,crc);
 		return;
 	}
-	writeBits(outputFile, position, buffer, "1",NULL);
+	writeBits(outputFile, position, buffer, "1",crc);
 	CharToString(SymBuf, (char)(root->symbol));
-	writeBits(outputFile, position, buffer, SymBuf,NULL);
+	writeBits(outputFile, position, buffer, SymBuf,crc);
 }
 /*Кодирование содержимого файла*/
 UINT64 writeData(char codes[256][256], int *position, unsigned char *buffer, FILE *inputFile, FILE *outputFile, UINT64 size, unsigned short *crc)
@@ -241,7 +241,7 @@ void encode(FILE *inputFile, FILE *outputFile, UINT64 fileSize, unsigned short *
 	_fseeki64_nolock(outputFile, sizeof(UINT64), SEEK_CUR);
 	// Записываем дерево
 	int m = ftell(outputFile);
-	WriteTree(head, &bufferTmp, &pos, outputFile);
+	WriteTree(head, &bufferTmp, &pos, outputFile,crc);
 	m = ftell(outputFile);
 	_fseeki64_nolock(inputFile, posAtBegin, SEEK_SET);//сдвиг в начало инпут файла для кодирования
 	posInWRTree = pos;//запоминаем позицию в буфере при записи дерева в файл
@@ -250,8 +250,10 @@ void encode(FILE *inputFile, FILE *outputFile, UINT64 fileSize, unsigned short *
 	writtenData *= 8;
 	if (pos != 0)//дозапись последнего байта
 	{
+		char tmpBuf[] = { "00000000" };
+		CharToString(tmpBuf, bufferTmp);
+		crc16(tmpBuf, 1, crc);
 		fwrite(&bufferTmp, sizeof(char), 1, outputFile);
-		crc16(bufferTmp, 1, crc);
 		bufferTmp = 0;
 		writtenData += pos;
 		pos = 0;

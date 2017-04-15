@@ -1,4 +1,16 @@
 #include "header.h"
+void printHelp()
+{
+	printf("Программа архиватор имеет следующий формат вызова:\n"
+		"harc.exe <операция> <имя архива> <имя файла> ....\n"
+		"Операции:\n"
+		"-a - поместить файл(ы) в архив\n"
+		"-x - извлечь файл(ы) из архивa\n"
+		"-d - удалить файл из архива\n"
+		"-t - проверить целостность архива\n"
+		"P.S не поддерживается архивация файлов из разных дирректорий\n"
+	);
+}
 /*
 Parsing parameters:
 1 - error
@@ -6,9 +18,10 @@ Parsing parameters:
 */
 int toggleSwitch(char* operation, int amount, char *param[])
 {
-	if (amount<3)
+	if ((amount<3) & (strcmp(param[1], "-help")))
 	{
 		printf("[ERROR:] Количество параметром не может быть меньше 2\n");
+		printHelp();
 		return 0;
 	}
 	//поместить файл(ы) в архив
@@ -64,9 +77,14 @@ int toggleSwitch(char* operation, int amount, char *param[])
 	//извлечь файл(ы) из архива
 	if (!strcmp(param[1], "-x"))
 	{
+		unsigned short crc = CRC;
 		if ((checkUssd(param[2], SIGNATURE)) != 0)
 			return 0;
 		FILE *archive = NULL;
+		if (accessRights(param[2]) != 1) {
+			printf("[WARNING:]Архив %s не имеет прав на чтение и запись\n", param[2]);
+			return 1;
+		}
 		if ((archive = fopen(param[2], "rb")) == NULL)
 			OPEN_ERR
 		Info *ptrOnStruct = NULL;
@@ -74,12 +92,11 @@ int toggleSwitch(char* operation, int amount, char *param[])
 			ALLOC_MEMORY_ERR
 		List *head = NULL;
 		List *tmp = NULL;
-		unsigned short crc = CRC;
 		tmp = (List*)malloc(sizeof(List));
 		makeListOfFiles(amount, param, &head);
 		if (!head)
 		{
-			printf("[ERROR:] Список пуст");
+			printf("[ERROR:] Список пуст\n");
 			return 0;
 		}
 		UINT64 size = getSize(archive);
@@ -114,30 +131,30 @@ int toggleSwitch(char* operation, int amount, char *param[])
 					flagForDeleting = 1;
 					FILE *newFile = NULL;
 					char *data = NULL;
-					//как указывать полный путь?!?!?!
-					char *path = NULL;
-					int k = 0;
-					if  ((path = (char*)malloc(k =(strlen(PATH) +strlen(tmpFileName) + 1))) == NULL)
-						ALLOC_MEMORY_ERR
-					strcpy(path, PATH);
-					strcat(path, tmpFileName);
-					if ((newFile = fopen(path, "wb")) == NULL)
+					if (fileExists(tmpFileName))
+					{
+						if (!accessRights(tmpFileName))
+						{
+								printf("[WARNING:]Архив %s не имеет прав на чтение и запись\n", tmpFileName);
+								return 1;
+						}
+						
+					}
+					if ((newFile = fopen(tmpFileName, "wb")) == NULL)
 						CREATE_FILE_ERR
-					free(path);
 					if ((ptrOnStruct)->flags == 0) {
 						if ((data = (char*)malloc(ptrOnStruct->size)) == NULL)
 							ALLOC_MEMORY_ERR
 							writeDataToFile(data, archive, newFile, &crc, ptrOnStruct->size);
-						//проверка crc
-						if (crc != (ptrOnStruct)->checkSum)
-							printf("[WARNING:] В процессе извлецения файл был повреждён:(\n");
 						free(data);
 					}
 					else
 					{
-						decode(archive, newFile);
+						decode(archive, newFile,&crc);
 					}
-					//free(tmp);
+					//проверка crc
+					if (crc != (ptrOnStruct)->checkSum)
+						printf("[WARNING:] В процессе извлецения файл был повреждён:(\n");
 					count =deleteByValue(&head, tmpFileName);
 					fflush(newFile);
 					if (fclose(newFile) == -1)
@@ -175,12 +192,12 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		if (amount != 3)
 		{
 			printf("[WARNING:]Неверное количество параметров для опции %s\n", "-l");
+			printHelp();
 			return 0;
 		}
 		Info *ptrOnStruct = NULL;
 		if ((ptrOnStruct = (Info*)malloc(sizeof(Info))) == NULL)
 			ALLOC_MEMORY_ERR
-		//проверка сигнатуры и расширения
 		if (!checkUssd(param[2], SIGNATURE))
 		{
 			showInfo(param[2],&ptrOnStruct);
@@ -194,6 +211,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		if (amount != 4)
 		{
 			printf("[WARNING:]Неверное количество параметров для опции %s\n", DELETE);
+			printHelp();
 			return 0;
 		}
 		if ((checkUssd(param[2],SIGNATURE))!= 0)
@@ -212,6 +230,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		if (amount != 3)
 		{
 			printf("[WARNING:]Неверное количество параметров для опции %s\n", INTEGRITYCHECK);
+			printHelp();
 			return 0;
 		}
 		if ((checkUssd(param[2], SIGNATURE)) != 0)
@@ -219,7 +238,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		Info *ptrOnStruct = NULL;
 		if ((ptrOnStruct = (Info*)malloc(sizeof(Info))) == NULL)
 			ALLOC_MEMORY_ERR
-		char** file =NULL;
+		char **file =NULL;
 		if (integrityСheck(param[2], &ptrOnStruct, &file) == 1)
 			printf("Архив %s повреждён, а именно на файле %s\n", param[2], file);
 		else printf("Архив %s цел\n", param[2]);
@@ -232,7 +251,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 	//вывести help
 	if (!strcmp(param[1], "-help"))
 	{
-		printf("HELP!\n");
+		printHelp();
 		return 0;
 	}
 	return 1;

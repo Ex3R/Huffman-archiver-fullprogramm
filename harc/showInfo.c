@@ -2,11 +2,8 @@
 void showInfo(char* archiveName, Info **ptrOnStruct)
 {
 	FILE* archive = NULL;
-	FILE* infoAboutFiles = NULL;
 	if ((archive = fopen(archiveName, "rb")) == NULL)
 		OPEN_ERR
-	if ((infoAboutFiles = fopen("output/infoAboutFiles.txt", "wb")) == NULL)
-		CREATE_FILE_ERR;
 	UINT64 endOFFile = getSize(archive);
 	if (endOFFile == 0)
 	{
@@ -16,6 +13,7 @@ void showInfo(char* archiveName, Info **ptrOnStruct)
 	//однократное чтение сигнатуры
 	if (_fseeki64_nolock(archive, SIZE_SIGNATURE, SEEK_SET) != 0)
 		FSEEK_ERR
+	printf("Информация о файлах в архиве %s:\n",shortNameOnly(archiveName));
 	while ((ftell(archive))!= endOFFile)
 	{
 		if ((fread(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1 , archive)) != 1)
@@ -34,15 +32,12 @@ void showInfo(char* archiveName, Info **ptrOnStruct)
 			FSEEK_ERR
 	//запись информации
 	for(int i=0; (i<(*ptrOnStruct)->lengthName);i++)
-		fprintf(infoAboutFiles, "%c", (*ptrOnStruct)->name[i]);
-	fprintf(infoAboutFiles, "  %   llu    ", (*ptrOnStruct)->size);
-	if ((*ptrOnStruct)->flags == ZERO) fprintf(infoAboutFiles, "%s", "Не сжатый   ");
-		else fprintf(infoAboutFiles, "%s", "Cжатый   ");
-	fprintf(infoAboutFiles, "%d%s", (*ptrOnStruct)->compression, "%\n");
-	fflush(archive);
+		printf("%c", (*ptrOnStruct)->name[i]);
+	printf("  %   llu    ", (*ptrOnStruct)->size);
+	if ((*ptrOnStruct)->flags == ZERO) printf("%s", "Не сжатый   ");
+		else printf("%s", "Cжатый   ");
+	printf("%d%s", (*ptrOnStruct)->compression, "%\n");
 	}
 	if (fclose(archive) == -1)
-		CLOSING_FILE_ERR
-	if (fclose(infoAboutFiles) == -1)
 		CLOSING_FILE_ERR
 }

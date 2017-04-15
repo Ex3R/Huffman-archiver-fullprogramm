@@ -7,8 +7,9 @@
 #include <sys/stat.h>
 #include "errorsAndWarnings.h"
 #include <stdlib.h>
-
-
+#include <time.h>
+#include <io.h>
+#define LENGTH_TMP_NAME 20
 #define JOIN(i) output/ ## i
 #define PATH "output/"
 #define SizeOfBuf 1024
@@ -30,8 +31,6 @@
 #define NOTCOMPRESSED 0
 #define NODE -1
 #define LIMIT_FOR_COMPRESSION 50
-char *mktemp(template);
-char *template;
 typedef unsigned __int64 UINT64;
 struct _stat64 size;
 typedef struct Tree
@@ -48,14 +47,14 @@ void makeHuffmanTree(Tree **head);
 void CodeTable(Tree *root, char codes[256][256], char vrm[256]);
 void CharToString(char *SymBuf, char c);
 UINT64 writeBits(FILE *file, int *position, unsigned char *buffer, char *value, unsigned short *crc);
-void WriteTree(Tree* root, unsigned char *buffer, int *position, FILE *outputFile);
+void WriteTree(Tree* root, unsigned char *buffer, int *position, FILE *outputFile,unsigned short *crc);
 UINT64 writeData(char codes[256][256], int *position, unsigned char *buffer, FILE *inputFile, FILE *outputFile, UINT64 size, unsigned short *crc);
 void encode(FILE *inputFile, FILE *outputFile, UINT64 fileSize, unsigned short *crc);
 /*decompression*/
 char read_bit(FILE* in);
 unsigned char read_char(FILE* in);
 Tree *createNode(FILE *inputFile);
-void decode(FILE *inputFile, FILE *outputFile);
+void decode(FILE *inputFile, FILE *outputFile, unsigned short *crc);
 /************************************/
 typedef struct {
 	unsigned short checkSum;
@@ -70,12 +69,17 @@ typedef struct List {
 	char *file;
 	struct List *next;
 } List;
+void printHelp();
+int toggleSwitch(char* operation, int amount, char *param[]);
 //операции со списком
 void adding(List **head, char *fileName);
 void printLinkedList(List *head);
 makeListOfFiles(int argc, char* argv[], List **head);
 int deleteByValue(List **head, char *fileName);
 //добавление
+int fileExists(char * filename);
+int accessRights(char *fileName);
+char *uniqName();
 UINT64 getSize(FILE* file);
 char writeDataToFile(char *buf, FILE *fin, FILE *fout, unsigned short* crc, UINT64 amount);
 char isEmptyFile(char* fileName);

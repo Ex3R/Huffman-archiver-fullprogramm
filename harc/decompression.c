@@ -44,13 +44,14 @@ Tree *createNode(FILE *inputFile)
 		return tmp;
 	}
 }
-void decode(FILE *inputFile, FILE *outputFile)
+void decode(FILE *inputFile, FILE *outputFile, unsigned short *crc)
 {
 	UINT64 dataSize = 0;
 	fread(&dataSize, sizeof(UINT64), 1, inputFile);
 	Tree *root = createNode(inputFile);
 	Tree *tmp = root;
 	unsigned char c;
+	char tmpBuf[] = {"00000000"};
 	/*Декодирование с помощью прохода по дереву*/
 	for (UINT64 i = 0; i < dataSize; i++)
 	{
@@ -65,7 +66,10 @@ void decode(FILE *inputFile, FILE *outputFile)
 		}
 		if (tmp->symbol != -1)
 		{
-			fprintf(outputFile, "%c", tmp->symbol);
+			CharToString(tmpBuf, tmp->symbol);
+			crc16(tmpBuf, 1, crc);
+			if (fwrite(&(tmp->symbol), sizeof(char), 1, outputFile) != 1)
+				WRITING_DATA_ERR
 			tmp = root;
 		}
 	}
