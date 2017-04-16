@@ -59,7 +59,7 @@ void showInfo(char* archiveName, Info **ptrOnStruct)
 				}
 			}
 		}
-	
+
 	if ((*ptrOnStruct)->flags == ZERO) printf("%s", "Не сжатый   ");
 		else printf("%s", "Cжатый   ");
 	printf("%d%s", (*ptrOnStruct)->compression, "%\n");
