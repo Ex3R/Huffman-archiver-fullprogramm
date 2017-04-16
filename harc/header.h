@@ -23,6 +23,11 @@
 #define ZERO 0
 #define DELETE "-d"
 #define INTEGRITYCHECK "-t"
+/*size*/
+#define BYTE "Bytes"
+#define KB "KB"
+#define MB "MB"
+#define GB "GB"
 /***********************************************For huffman's algorithm****************************************************************************/
 #define MAKELIST 0
 #define MAKETREE 1

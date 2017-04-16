@@ -33,7 +33,33 @@ void showInfo(char* archiveName, Info **ptrOnStruct)
 	//запись информации
 	for(int i=0; (i<(*ptrOnStruct)->lengthName);i++)
 		printf("%c", (*ptrOnStruct)->name[i]);
-	printf("  %   llu    ", (*ptrOnStruct)->size);
+	/*красивый вывод*/
+		if ((*ptrOnStruct)->size < 1024)
+		{
+			printf("  %   llu%s  ", (*ptrOnStruct)->size, BYTE);
+		}
+		else
+		{
+			(*ptrOnStruct)->size /= 1024;
+			if ((*ptrOnStruct)->size < 1024)
+			{
+				printf("  %   llu%s  ", (*ptrOnStruct)->size, KB);
+			}
+			else
+			{
+				(*ptrOnStruct)->size /= 1024;
+				if ((*ptrOnStruct)->size < 1024)
+				{
+					printf("  %   llu%s  ", (*ptrOnStruct)->size, MB);
+				}
+				else
+				{
+					(*ptrOnStruct)->size /= 1024;
+					printf("  %   llu%s  ", (*ptrOnStruct)->size, GB);
+				}
+			}
+		}
+	
 	if ((*ptrOnStruct)->flags == ZERO) printf("%s", "Не сжатый   ");
 		else printf("%s", "Cжатый   ");
 	printf("%d%s", (*ptrOnStruct)->compression, "%\n");
