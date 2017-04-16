@@ -30,9 +30,6 @@
     <ClCompile Include="showInfo.c">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
-    <ClCompile Include="extractionFiles.c">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
     <ClCompile Include="toggleSwitch.c">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
@@ -46,6 +43,12 @@
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
     <ClCompile Include="GenerateUniqTMPName.c">
+      <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
+    <ClCompile Include="deleteFile.c">
+      <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
+    <ClCompile Include="checks.c">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
   </ItemGroup>

@@ -240,13 +240,10 @@ void encode(FILE *inputFile, FILE *outputFile, UINT64 fileSize, unsigned short *
 	placeBeforeTree = _ftelli64_nolock(outputFile);
 	_fseeki64_nolock(outputFile, sizeof(UINT64), SEEK_CUR);
 	// Записываем дерево
-	int m = ftell(outputFile);
 	WriteTree(head, &bufferTmp, &pos, outputFile,crc);
-	m = ftell(outputFile);
 	_fseeki64_nolock(inputFile, posAtBegin, SEEK_SET);//сдвиг в начало инпут файла для кодирования
 	posInWRTree = pos;//запоминаем позицию в буфере при записи дерева в файл
 	writtenData = writeData(codes, &pos, &bufferTmp, inputFile, outputFile, fileSize,crc);
-	m = ftell(outputFile);
 	writtenData *= 8;
 	if (pos != 0)//дозапись последнего байта
 	{

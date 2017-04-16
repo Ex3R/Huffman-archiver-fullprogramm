@@ -72,6 +72,11 @@ char integrityСheck(char *archiveName, Info **ptrOnStruct,char **file)
 				flagErorr = 1;
 				READING_DATA_ERR
 			}
+			if ((*ptrOnStruct)->flags == COMPRESSED) {
+				(*ptrOnStruct)->size -= sizeof(UINT64);
+				//сдвиг на служебную информацию в закодированном файле
+				_fseeki64_nolock(archive, sizeof(UINT64), SEEK_CUR);
+			}
 			if ((data = (char*)malloc((*ptrOnStruct)->size)) == NULL)
 				ALLOC_MEMORY_ERR
 			//сравнение контрольных сумм

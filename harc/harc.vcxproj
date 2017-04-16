@@ -147,11 +147,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="addFiles.c" />
+    <ClCompile Include="checks.c" />
     <ClCompile Include="checkSum.c" />
     <ClCompile Include="compression.c" />
     <ClCompile Include="decompression.c" />
     <ClCompile Include="errorsAndWarnings.h" />
-    <ClCompile Include="extractionFiles.c" />
+    <ClCompile Include="deleteFile.c" />
     <ClCompile Include="GenerateUniqTMPName.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="integrityСheck.c" />

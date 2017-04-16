@@ -96,7 +96,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		makeListOfFiles(amount, param, &head);
 		if (!head)
 		{
-			printf("[ERROR:] Список пуст\n");
+			printf("[ERROR:] Список извлекаемых пуст\n");
 			return 0;
 		}
 		UINT64 size = getSize(archive);
@@ -147,14 +147,15 @@ int toggleSwitch(char* operation, int amount, char *param[])
 							ALLOC_MEMORY_ERR
 							writeDataToFile(data, archive, newFile, &crc, ptrOnStruct->size);
 						free(data);
+						//!!!! не знаю, как правильно
+						if (crc != (ptrOnStruct)->checkSum)
+							printf("[WARNING:] В процессе извлецения файл был повреждён:(\n");
 					}
 					else
 					{
 						decode(archive, newFile,&crc);
 					}
 					//проверка crc
-					if (crc != (ptrOnStruct)->checkSum)
-						printf("[WARNING:] В процессе извлецения файл был повреждён:(\n");
 					count =deleteByValue(&head, tmpFileName);
 					fflush(newFile);
 					if (fclose(newFile) == -1)

@@ -66,8 +66,11 @@ void decode(FILE *inputFile, FILE *outputFile, unsigned short *crc)
 		}
 		if (tmp->symbol != -1)
 		{
-			CharToString(tmpBuf, tmp->symbol);
-			crc16(tmpBuf, 1, crc);
+			if (crc)
+			{
+				CharToString(tmpBuf, tmp->symbol);
+				crc16(tmpBuf, 1, crc);
+			}
 			if (fwrite(&(tmp->symbol), sizeof(char), 1, outputFile) != 1)
 				WRITING_DATA_ERR
 			tmp = root;

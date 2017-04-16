@@ -10,7 +10,6 @@
 #include <time.h>
 #include <io.h>
 #define LENGTH_TMP_NAME 20
-#define JOIN(i) output/ ## i
 #define PATH "output/"
 #define SizeOfBuf 1024
 #define EXTENTION ".txt"
@@ -24,7 +23,7 @@
 #define ZERO 0
 #define DELETE "-d"
 #define INTEGRITYCHECK "-t"
-/*For huffman's algorithm*/
+/***********************************************For huffman's algorithm****************************************************************************/
 #define MAKELIST 0
 #define MAKETREE 1
 #define COMPRESSED 1
@@ -55,7 +54,7 @@ char read_bit(FILE* in);
 unsigned char read_char(FILE* in);
 Tree *createNode(FILE *inputFile);
 void decode(FILE *inputFile, FILE *outputFile, unsigned short *crc);
-/************************************/
+/*************************************************************************************************************************************************/
 typedef struct {
 	unsigned short checkSum;
 	char lengthName;
