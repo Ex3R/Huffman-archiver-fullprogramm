@@ -4,6 +4,7 @@ int main(int argc, char *argv[]) {
 		if (toggleSwitch(argv[1], argc, argv))
 		{
 			printf("[WARNING]: Была введена неизвестная опция\n");
+			printHelp();
 			return 0;
 		}
 		return 0;

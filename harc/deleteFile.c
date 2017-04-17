@@ -3,7 +3,10 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 {
 	FILE *archive = NULL;
 	FILE *tmp = NULL;
+	UINT64 size;
 	char *data = NULL;
+	char flagFounded = 0;
+	char *TMP2name = NULL; 	//коротка€ строка дл€ правильного сравнени€
 	unsigned int ussd = SIGNATURE;
 	if (accessRights(archiveName) != 1) {
 		printf("[WARNING:]јрхив %s не имеет прав на чтение и запись\n", archiveName);
@@ -11,19 +14,14 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 	}
 	if ((archive = fopen(archiveName,"rb")) == NULL)
 		OPEN_ERR
-	//создание временного файла
-	char *tmpArchiveName =NULL;
-	tmpArchiveName = uniqName();
+	char *tmpArchiveName =NULL; tmpArchiveName = uniqName();
 	if ((tmp = fopen(tmpArchiveName, "wb")) == NULL)
 		CREATE_FILE_ERR
 	if ((fwrite(&ussd , SIZE_SIGNATURE , 1 ,tmp))!=1)
-				WRITING_DATA_ERR
-	_fflush_nolock(tmp);
-	UINT64 size =getSize(archive);
-	char flagFounded = 0;
+				WRITING_DATA_ERR _fflush_nolock(tmp);
+	size = getSize(archive);
 	if (_fseeki64_nolock(archive, SIZE_SIGNATURE, SEEK_SET) != 0)
 		FSEEK_ERR
-
 		while ((_ftelli64_nolock(archive)) != size)
 		{
 			if ((fread(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1 , archive)) != 1)
@@ -38,8 +36,6 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 				READING_DATA_ERR
 			if ((fread(&((*ptrOnStruct)->size), SIZE_SIZE, 1, archive)) != 1)
 				READING_DATA_ERR
-			//коротка€ строка дл€ правильного сравнени€
-			char *TMP2name = NULL;
 			if ((TMP2name = (char*)malloc( ((*ptrOnStruct)->lengthName) + 1)) ==NULL)
 				ALLOC_MEMORY_ERR
 			strncpy((TMP2name), (*ptrOnStruct)->name, (*ptrOnStruct)->lengthName);
@@ -54,8 +50,8 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 					continue;
 				}
 			//иначе не совпали - то есть нужно переписать в темп
-			if ((data = (char*)malloc((*ptrOnStruct)->size)) == NULL)
-				ALLOC_MEMORY_ERR
+			/*if ((data = (char*)malloc((*ptrOnStruct)->size)) == NULL)
+				ALLOC_MEMORY_ERR*/
 			if ((fwrite(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1, tmp)) != 1)
 				WRITING_DATA_ERR
 			if ((fwrite(&((*ptrOnStruct)->lengthName), SIZE_LENGTHNAME, 1, tmp)) != 1)
@@ -68,14 +64,15 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 				WRITING_DATA_ERR
 			if (fwrite(&((*ptrOnStruct)->size), SIZE_SIZE, 1, tmp) != 1)
 				WRITING_DATA_ERR
-			writeDataToFile(data,archive,tmp,NULL, (*ptrOnStruct)->size);
+			if ((data = (char*)malloc(SizeOfBuf)) == NULL)
+				ALLOC_MEMORY_ERR
+			writeDataToFile(data, archive, tmp, NULL, (*ptrOnStruct)->size);
 			free(data);
 		}
 	if (fclose(archive) == -1)
 		CLOSING_FILE_ERR
 	if (fclose(tmp) == -1)
 		CLOSING_FILE_ERR
-	//TODO уникальное им€ дл€ темпа
 	if (remove(archiveName) == -1)
 		perror("[ERROR:] Could not delete %s\n", archiveName);
 	if (rename(tmpArchiveName, archiveName) == -1)
@@ -87,7 +84,6 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 		return 1;
 	}
 	else printf("[SUCCSESS:] ‘айл %s был успешно удалЄн из архива %s \n", fileName, archiveName);
-	
 	//после удалени€ может остатьс€ лишь одна сигнатура
 	if ((archive = fopen(archiveName, "rb")) == NULL)
 		OPEN_ERR
@@ -99,7 +95,7 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 		printf("[WARNING:] ¬ архиве сожержитс€ лишь сигнатура, хотите удалить архив? Y/N\n");
 		char answer;
 		answer = getchar();
-		if (answer == 'Y')
+		if ((answer == 'Y') || (answer == 'y') || (answer == 'н'))
 		{
 			if (remove(archiveName) == -1)
 				perror("[ERROR]Could not delete %s\n", archiveName);
