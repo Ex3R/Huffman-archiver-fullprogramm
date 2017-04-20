@@ -38,3 +38,30 @@ void crc16(unsigned char * pcBlock, unsigned short len, unsigned short* crc)
 		while (len--)
 		*crc = (*crc << 8) ^ crc16Table[(*crc >> 8) ^ *pcBlock++];
 }
+void computeCRC(char *buf, FILE *inputFile, unsigned short *crc, UINT64 size,char withShift)
+{
+	//нужно запомнить, чтобы после подсчёта сдвинуться обратно
+	UINT64 position = _ftelli64_nolock(inputFile); 
+	UINT64 temp = 0;
+	UINT64 temp2 = size;
+	int bufferSize = SizeOfBuf;
+	while (temp2 != 0)
+	{
+		if (temp2 <= bufferSize)
+		{
+			temp = fread(buf, 1, temp2, inputFile);
+			temp2 -= temp;
+		}
+		else
+		{
+			temp = fread(buf, 1, bufferSize, inputFile);
+			temp2 -= temp;
+		}
+		if (crc)
+		{
+			crc16(buf, temp, crc);
+		}
+	}
+	if (withShift)
+	_fseeki64(inputFile, position, SEEK_SET);
+}

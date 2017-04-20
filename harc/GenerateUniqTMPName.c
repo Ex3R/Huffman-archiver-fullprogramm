@@ -8,16 +8,9 @@ int fileExists(char * filename)
 1 - если пправа на чтение и запись есть
 иначе прав нет
 */
-int accessRights(char *fileName)
+int accessRights(char *fileName,int mode)
 {
-	//if (fileExists(fileName))
-	//{
-		return (access(fileName, 6) == 0);
-	//}
-//	else {
-		//printf("Файл %s не существует", fileName);
-	//}
-
+		return (access(fileName, mode) == 0);
 }
 char *uniqName() {
 	unsigned char randChislo;

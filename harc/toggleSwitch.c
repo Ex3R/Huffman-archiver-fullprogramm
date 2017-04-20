@@ -81,8 +81,8 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		if ((checkUssd(param[2], SIGNATURE)) != 0)
 			return 0;
 		FILE *archive = NULL;
-		if (accessRights(param[2]) != 1) {
-			printf("[WARNING:]Архив %s не имеет прав на чтение и запись\n", param[2]);
+		if (accessRights(param[2],READING) != 1) {
+			printf("[WARNING:]Архив %s не имеет прав на чтение\n", param[2]);
 			return 1;
 		}
 		if ((archive = fopen(param[2], "rb")) == NULL)
@@ -133,7 +133,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 					char *data = NULL;
 					if (fileExists(tmpFileName))
 					{
-						if (!accessRights(tmpFileName))
+						if (!accessRights(tmpFileName, WRITING))
 						{
 								printf("[WARNING:]Архив %s не имеет прав на чтение и запись\n", tmpFileName);
 								return 1;
@@ -143,19 +143,18 @@ int toggleSwitch(char* operation, int amount, char *param[])
 					if ((newFile = fopen(tmpFileName, "wb")) == NULL)
 						CREATE_FILE_ERR
 					if ((ptrOnStruct)->flags == 0) {
-						if ((data = (char*)malloc(ptrOnStruct->size)) == NULL)
+						if ((data = (char*)malloc(SizeOfBuf)) == NULL)
 							ALLOC_MEMORY_ERR
-							writeDataToFile(data, archive, newFile, &crc, ptrOnStruct->size);
+						writeDataToFile(data, archive, newFile, &crc, ptrOnStruct->size);
 						free(data);
-						//!!!! не знаю, как правильно
-						if (crc != (ptrOnStruct)->checkSum)
-							printf("[WARNING:] В процессе извлецения файл был повреждён:(\n");
 					}
 					else
 					{
-						decode(archive, newFile,&crc);
+						decode(archive, newFile,&crc, (ptrOnStruct)->size);
 					}
 					//проверка crc
+					if (crc != (ptrOnStruct)->checkSum)
+						printf("[WARNING:] В процессе извлечения файл был повреждён:(\n");
 					count =deleteByValue(&head, tmpFileName);
 					fflush(newFile);
 					if (fclose(newFile) == -1)
@@ -249,7 +248,6 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		free(ptrOnStruct);
 		return 0;
 	}
-	//вывести help
 	if (!strcmp(param[1], "-help"))
 	{
 		printHelp();

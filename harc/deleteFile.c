@@ -8,8 +8,8 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct)
 	char flagFounded = 0;
 	char *TMP2name = NULL; 	//короткая строка для правильного сравнения
 	unsigned int ussd = SIGNATURE;
-	if (accessRights(archiveName) != 1) {
-		printf("[WARNING:]Архив %s не имеет прав на чтение и запись\n", archiveName);
+	if (accessRights(archiveName,READING) != 1) {
+		printf("[WARNING:]Архив %s не имеет прав на чтение\n", archiveName);
 		return 1;
 	}
 	if ((archive = fopen(archiveName,"rb")) == NULL)

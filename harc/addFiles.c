@@ -51,6 +51,7 @@ char* shortNameOnly(char* name)
 	for (i; (((name[i] != '/')) && (i + 1)); i--);
 	return &name[++i];
 }
+/*Определяет степень сжатия файла в процентах*/
 double compressionRatio(double firstSize, double lastSize)
 {
 	double percent;
@@ -66,6 +67,7 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 	UINT64 posForWRSize;
 	UINT64 realSize;
 	char percentCompression;
+	unsigned int TMPussd = 0;//signature
 	char *data = NULL;
 	FILE *fin = NULL, *tmp=NULL, *fout = NULL;
 	int makeTmpArchieve;//создавать временный архив или нет(флаг)
@@ -90,14 +92,19 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 	//в цикле просто по порядку добавляем в пустой архив
 	if ((makeTmpArchieve == 0) || (makeTmpArchieve == 1))
 	{
+		
 		if ((fout = fopen(archiveName, "rb+")) == NULL)
 			CREATE_FILE_ERR
 		for (u; u < amountOfFiles; u++)
 		{
 				_stat64(fileNames[u], &info);
+				if (accessRights(fileNames[u], READING) != 1) {
+					printf("[WARNING:]Архив %s не имеет прав на чтение\n", archiveName);
+					return 0;
+				}
 				if ((fin = fopen(fileNames[u], "rb")) == NULL)
 					OPEN_ERR
-				//заполнение полей структуры
+			//заполнение полей структуры
 				(*ptrOnStruct)->lengthName = strlen(shortNameOnly(fileNames[u])); //длина имени файла
 				strcpy((*ptrOnStruct)->name, shortNameOnly(fileNames[u]));
 				(*ptrOnStruct)->size = info.st_size;
@@ -122,12 +129,12 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 					posForWRSize = _ftelli64_nolock(fout);
 					if (fwrite(&((*ptrOnStruct)->size), SIZE_SIZE, 1, fout) != 1)
 						WRITING_DATA_ERR
-					//запись файла
+			//запись файла
 					crc = CRC;
 					if (compressOrNot((*ptrOnStruct)->size))
 						encode(fin, fout, getSize(fin),&crc);
 					else {
-						if ((data = (char*)malloc(info.st_size)) == NULL)
+						if ((data = (char*)malloc(SizeOfBuf)) == NULL)
 							ALLOC_MEMORY_ERR
 						writeDataToFile(data, fin, fout, &crc, (*ptrOnStruct)->size);
 						free(data);
@@ -135,29 +142,25 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 					fflush(fout);
 					realSize = _ftelli64_nolock(fout) - posForWRSize - SIZE_SIZE;
 					percentCompression = (char)(compressionRatio((double)(*ptrOnStruct)->size, (double)realSize));
-					//сдвиг для записи размера
-					// -1 для записи процента сжатия
+			//сдвиг для записи размера
+			// -1 для записи процента сжатия
 					_fseeki64_nolock(fout,posForWRSize-1, SEEK_SET);
 					if ((fwrite(&percentCompression, SIZE_FLAGS, 1, fout)) != 1)
 						WRITING_DATA_ERR
 					if ((fwrite(&realSize, SIZE_SIZE, 1, fout)) != 1)
 						WRITING_DATA_ERR
-					//сдвиг обратно для записи контрольной суммы
+			//сдвиг обратно для записи контрольной суммы
 					_fseeki64_nolock(fout, posForWRCRC, SEEK_SET);
-					(*ptrOnStruct)->checkSum = crc;//контрольная сумма
+					(*ptrOnStruct)->checkSum = crc;
 					if ((fwrite(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1, fout)) != 1)
 						WRITING_DATA_ERR
 					_fseeki64_nolock(fout,0,SEEK_END);
 		}
 		fcloseall;
 	}
-	//если нужно создавать временный архив
-	else
+	
+	else //если нужно создавать временный архив
 	{
-		if (accessRights(archiveName) != 1) {
-			printf("[WARNING:]Архив %s не имеет прав на чтение и запись\n",archiveName);
-			return 1;
-		}
 		if ((fin = fopen(archiveName, "rb+")) == NULL)
 			OPEN_ERR
 		//создание временного файла
@@ -168,10 +171,7 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 		//запись сигнатуры во временный архив
 		if ((fwrite(&(ussd), sizeof(unsigned int), 1, tmp))!= 1)
 			WRITING_DATA_ERR fflush(tmp);
-		//определение размера архива
 		UINT64 endOFFile = getSize(fin);
-		//временные переменные
-		unsigned int TMPussd = 0;
 		//чтение сигнатуры
 		if (fread(&TMPussd, SIZE_SIGNATURE, 1 , fin) != 1)
 			READING_DATA_ERR
@@ -220,8 +220,6 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 				{
 				//записываем во временный архив
 				_fseeki64_nolock(tmp, 0, SEEK_END);
-				posForWRCRC = _ftelli64_nolock(tmp);
-				(*ptrOnStruct)->checkSum = crc;
 				if ((fwrite(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1, tmp)) != 1)
 				WRITING_DATA_ERR
 				if ((fwrite(&((*ptrOnStruct)->lengthName), SIZE_LENGTHNAME, 1, tmp)) != 1)
@@ -232,36 +230,16 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 				WRITING_DATA_ERR
 				if (fwrite(&((*ptrOnStruct)->compression), SIZE_FLAGS, 1, tmp) != 1)
 				WRITING_DATA_ERR
-				posForWRSize = _ftelli64_nolock(tmp);
 				if (fwrite(&((*ptrOnStruct)->size), SIZE_SIZE, 1, tmp) != 1)
 				WRITING_DATA_ERR
 						//запись самого файла
-						crc = CRC;
-						if (compressOrNot((*ptrOnStruct)->size))
-							encode(fin, tmp, getSize(fin),&crc);
-						else {
-							if ((data = (char*)malloc((*ptrOnStruct)->size)) == NULL)
-								ALLOC_MEMORY_ERR
-							writeDataToFile(data, fin, tmp, &crc, (*ptrOnStruct)->size);
-							free(data);
-						}
-						fflush(tmp);
-						realSize = _ftelli64_nolock(tmp) - posForWRSize - SIZE_SIZE;
-						percentCompression = (char)(compressionRatio((double)(*ptrOnStruct)->size, (double)realSize));
-						//сдвиг для записи размера
-						_fseeki64_nolock(tmp, posForWRSize - 1, SEEK_SET);
-						if ((fwrite(&percentCompression, SIZE_FLAGS, 1, tmp)) != 1)
-							WRITING_DATA_ERR
-						if ((fwrite(&realSize, SIZE_SIZE, 1, tmp)) != 1)
-							WRITING_DATA_ERR
-						//сдвиг обратно для записи контрольной суммы
-						_fseeki64_nolock(tmp, posForWRCRC, SEEK_SET);
-						(*ptrOnStruct)->checkSum = crc;//контрольная сумма
-						if ((fwrite(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1, tmp)) != 1)
-							WRITING_DATA_ERR
-						_fseeki64_nolock(tmp,0,SEEK_END);
-				}
+				if ((data = (char*)malloc(SizeOfBuf)) == NULL)
+					ALLOC_MEMORY_ERR
+				writeDataToFile(data, fin, tmp, &crc, (*ptrOnStruct)->size);
+				free(data);
+				fflush(tmp);
 			}
+	}
 		//закрываем наш архив
 		if (fclose(fin) == -1)
 			CLOSING_FILE_ERR
@@ -301,7 +279,7 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 				if (compressOrNot((*ptrOnStruct)->size))
 					encode(fin, tmp, getSize(fin), &crc);
 				else {
-					if ((data = (char*)malloc((*ptrOnStruct)->size)) == NULL)
+					if ((data = (char*)malloc(SizeOfBuf)) == NULL)
 						ALLOC_MEMORY_ERR
 						writeDataToFile(data, fin, tmp, &crc, (*ptrOnStruct)->size);
 					free(data);

@@ -15,6 +15,8 @@ void createFrequencyArr(FILE *file, UINT64 *arr, UINT64 size)
 	}
 	return;
 }
+/*‘ункци€ вставки сначала в список, если mode = 0
+иначе вставка в дерево*/
 void insert(Tree **head, UINT64 count, int symbol, char mode)
 {
 	Tree* tmp = (Tree*)malloc(sizeof(Tree));
@@ -236,7 +238,6 @@ void encode(FILE *inputFile, FILE *outputFile, UINT64 fileSize, unsigned short *
 	}
 	makeHuffmanTree(&head);
 	CodeTable(head, codes, vrm);// ѕостроение кодов дл€ символов
-								//сдвиг дл€ записи размера закодированной части (без дерева и чего-либо)
 	placeBeforeTree = _ftelli64_nolock(outputFile);
 	_fseeki64_nolock(outputFile, sizeof(UINT64), SEEK_CUR);
 	// «аписываем дерево
@@ -247,14 +248,17 @@ void encode(FILE *inputFile, FILE *outputFile, UINT64 fileSize, unsigned short *
 	writtenData *= 8;
 	if (pos != 0)//дозапись последнего байта
 	{
+		int m = ftell(outputFile);
 		char tmpBuf[] = { "00000000" };
 		CharToString(tmpBuf, bufferTmp);
-		crc16(tmpBuf, 1, crc);
+		crc16(tmpBuf, sizeof(char) , crc);
 		fwrite(&bufferTmp, sizeof(char), 1, outputFile);
+		m = ftell(outputFile);
 		bufferTmp = 0;
 		writtenData += pos;
 		pos = 0;
 	}
+	//размер закодированной части без дерева
 	writtenData -= posInWRTree;
 	fflush(outputFile);
 	_fseeki64_nolock(outputFile, placeBeforeTree, SEEK_SET);

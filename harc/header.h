@@ -35,6 +35,12 @@
 #define NOTCOMPRESSED 0
 #define NODE -1
 #define LIMIT_FOR_COMPRESSION 50
+/*for accsess*/
+#define READING 4
+#define WRITING 2
+#define RANDW 6
+#define WITHSHIFT 1
+#define NOSHIFT 0
 typedef unsigned __int64 UINT64;
 struct _stat64 size;
 typedef struct Tree
@@ -55,10 +61,10 @@ void WriteTree(Tree* root, unsigned char *buffer, int *position, FILE *outputFil
 UINT64 writeData(char codes[256][256], int *position, unsigned char *buffer, FILE *inputFile, FILE *outputFile, UINT64 size, unsigned short *crc);
 void encode(FILE *inputFile, FILE *outputFile, UINT64 fileSize, unsigned short *crc);
 /*decompression*/
-char read_bit(FILE* in);
-unsigned char read_char(FILE* in);
-Tree *createNode(FILE *inputFile);
-void decode(FILE *inputFile, FILE *outputFile, unsigned short *crc);
+char read_bit(FILE* in, unsigned short *crc);
+unsigned char read_char(FILE* in, unsigned short *crc);
+Tree *createNode(FILE *inputFile, unsigned short *crc);
+void decode(FILE *inputFile, FILE *outputFile, unsigned short *crc, UINT64 size);
 /*************************************************************************************************************************************************/
 typedef struct {
 	unsigned short checkSum;
@@ -82,7 +88,7 @@ makeListOfFiles(int argc, char* argv[], List **head);
 int deleteByValue(List **head, char *fileName);
 //добавление
 int fileExists(char * filename);
-int accessRights(char *fileName);
+int accessRights(char *fileName, int mode);
 char *uniqName();
 UINT64 getSize(FILE* file);
 char writeDataToFile(char *buf, FILE *fin, FILE *fout, unsigned short* crc, UINT64 amount);
@@ -98,6 +104,7 @@ char delete(char *archiveName, char *fileName, Info **ptrOnStruct);
 //вывод информации о файлах
 void showInfo(char* archiveName, Info **ptrOnStruct);
 //проверка архива на целостность
+void computeCRC(char *buf, FILE *inputFile, unsigned short *crc, UINT64 size, char withShift);
 char integrityСheck(char *archiveName, Info **ptrOnStruct, char **file);
 char readDataFromFile(char *buf, FILE *fin, unsigned short* crc, UINT64 amount);
 #endif

@@ -77,7 +77,7 @@ char integrityСheck(char *archiveName, Info **ptrOnStruct,char **file)
 				//сдвиг на служебную информацию в закодированном файле
 				_fseeki64_nolock(archive, sizeof(UINT64), SEEK_CUR);
 			}
-			if ((data = (char*)malloc((*ptrOnStruct)->size)) == NULL)
+			if ((data = (char*)malloc(SizeOfBuf)) == NULL)
 				ALLOC_MEMORY_ERR
 			//сравнение контрольных сумм
 			currentCheckSum = CRC;
