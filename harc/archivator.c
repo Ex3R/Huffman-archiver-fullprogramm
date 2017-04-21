@@ -91,7 +91,7 @@ int accessRights(char *fileName, int mode)
 char isEmptyFile(char* fileName)
 {
 	FILE* file = NULL;
-	if (fileExists(fileName) == 0)
+	if ((file = fopen(fileName, "rb")) == NULL)
 	{
 		return 0;
 	}
