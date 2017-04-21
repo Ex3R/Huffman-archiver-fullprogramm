@@ -1,15 +1,10 @@
 #include "header.h"
-char read_bit(FILE* in, unsigned short *crc)
+char read_bit(FILE* in)
 {
-	char tmpBuf[] = { "00000000" };
 	static unsigned char buf = 0, counter = 0;
 	if (!counter)
 	{
 		fread(&buf, sizeof(char), 1, in);
-		if (crc) {
-			CharToString(tmpBuf, buf);
-			crc16(tmpBuf, 1, crc);
-		}
 	}
 	counter++;
 	int bit = buf >> 7;
@@ -18,34 +13,35 @@ char read_bit(FILE* in, unsigned short *crc)
 		counter = 0;
 	return bit;
 }
-unsigned char read_char(FILE* in, unsigned short *crc)
+unsigned char read_char(FILE* in)
 {
 	unsigned char c = 0;
 	for (int i = 0; i < sizeof(char) * 8; i++)
 	{
 		c <<= 1;
-		c |= read_bit(in, crc);
+		c |= read_bit(in);
 	}
 	return c;
 }
 /*Восстановление дерева из файла*/
-Tree *createNode(FILE *inputFile, unsigned short *crc)
+Tree *createNode(FILE *inputFile)
 {
 	unsigned char c;
 	Tree *tmp = (Tree*)malloc(sizeof(Tree));
-	char bit = read_bit(inputFile,crc);
+	char bit = read_bit(inputFile);
 	if (bit == 0)
 	{
 		tmp->symbol = -1;
-		tmp->left = createNode(inputFile,crc);
-		tmp->right = createNode(inputFile,crc);
+		tmp->left = createNode(inputFile);
+		tmp->right = createNode(inputFile);
 		return tmp;
 	}
 	if (bit == 1)
 	{
-		c = read_char(inputFile,crc);
+		c = read_char(inputFile);
 		tmp->symbol = c;
 		tmp->left = tmp->right = NULL;
+		tmp->next = NULL;
 		return tmp;
 	}
 }
@@ -58,15 +54,23 @@ void decode(FILE *inputFile, FILE *outputFile, unsigned short *crc, UINT64 size)
 		ALLOC_MEMORY_ERR
 	size-=sizeof(UINT64);//потому что в размере содержится размер закодированной части
 	computeCRC(data,inputFile,crc,size,WITHSHIFT);
-	Tree *root = createNode(inputFile,NULL);
+	Tree *root = createNode(inputFile);
 	Tree *tmp = root;
 	unsigned char c;
 	/*Декодирование с помощью прохода по дереву*/
 	for (UINT64 i = 0; i < dataSize; i++)
 	{
-		c = read_bit(inputFile,NULL);
+		c = read_bit(inputFile);
+		if (!tmp->next)
+		{
+			if (fwrite(&(tmp->symbol), sizeof(char), 1, outputFile) != 1)
+				WRITING_DATA_ERR
+				tmp = root;
+			continue;
+		}
 		if (c == 0)
 		{
+			
 			tmp = tmp->left;
 		}
 		else
@@ -75,7 +79,6 @@ void decode(FILE *inputFile, FILE *outputFile, unsigned short *crc, UINT64 size)
 		}
 		if (tmp->symbol != -1)
 		{
-			
 			if (fwrite(&(tmp->symbol), sizeof(char), 1, outputFile) != 1)
 				WRITING_DATA_ERR
 			tmp = root;

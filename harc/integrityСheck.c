@@ -1,33 +1,13 @@
 #include "header.h";
-char readDataFromFile(char *buf, FILE *fin, unsigned short* crc, UINT64 amount)
-{
-	UINT64 temp = 0;
-	UINT64 temp2 = amount;
-	int bufferSize = SizeOfBuf;
-	while (temp2 != 0)
-	{
-		if (temp2 <= bufferSize)
-		{
-			temp = fread(buf, 1, temp2, fin);
-			temp2 -= temp;
-		}
-		else
-		{
-			temp = fread(buf, 1, bufferSize, fin);
-			temp2 -= temp;
-		}
-		if (crc)
-		{
-			crc16(buf, temp, crc);
-		}
-	}
-	return 0;
-}
 char integrityÑheck(char *archiveName, Info **ptrOnStruct,char **file)
 {
 	FILE *archive = NULL;
 	char *data = NULL;
 	unsigned short currentCheckSum;
+	if (!fileExists(archiveName))
+	{
+		printf("Àðõèâ %s íå ñóùåñòâóåò\n", archiveName);
+	}
 	if ((archive = fopen(archiveName, "rb")) == NULL)
 		OPEN_ERR;
 	UINT64 size =getSize(archive);
@@ -81,7 +61,7 @@ char integrityÑheck(char *archiveName, Info **ptrOnStruct,char **file)
 				ALLOC_MEMORY_ERR
 			//ñðàâíåíèå êîíòðîëüíûõ ñóìì
 			currentCheckSum = CRC;
-			readDataFromFile(data,archive,&currentCheckSum, (*ptrOnStruct)->size);
+			computeCRC(data, archive, &currentCheckSum, (*ptrOnStruct)->size, NOSHIFT);
 			free(data);
 			if (currentCheckSum != (*ptrOnStruct)->checkSum)
 				flagErorr = 1;

@@ -1,63 +1,4 @@
 #include "header.h";
-/*Определение размера файла*/
-UINT64 getSize(FILE* file)
-{
-	UINT64 endOFFile = 0;
-	_fseeki64_nolock(file, 0, SEEK_END);
-	endOFFile = _ftelli64_nolock(file);
-	_fseeki64_nolock(file, 0, SEEK_SET);
-	return endOFFile;
-}
-/*
- Функция копирования файла 
-0 - если ошибок при записи не возникло
-1- если ошибки
-*/
-char writeDataToFile(char *buf, FILE *fin, FILE *fout, unsigned short* crc, UINT64 amount)
-{
-	UINT64 temp = 0;
-	UINT64 temp2 = amount;
-	int bufferSize = SizeOfBuf;
-	while (temp2!=0)
-	{
-		if (temp2 <= bufferSize)
-		{
-			temp = fread(buf, 1, temp2, fin);
-			temp2 -= temp;
-		}
-		else 
-		{
-			temp = fread(buf, 1, bufferSize, fin);
-			temp2 -= temp;
-		}
-
-		if (crc)
-		{
-			crc16(buf, temp, crc);
-		}
-
-		if (fwrite(buf, 1, temp, fout) != temp)
-			WRITING_DATA_ERR
-	}
-	return 0;
-}
-/*
-Функция оставляет непосредственно имя файла
-возвращает указатель на нужный символ
-*/
-char* shortNameOnly(char* name)
-{
-	int i = strlen(name);
-	for (i; (((name[i] != '/')) && (i + 1)); i--);
-	return &name[++i];
-}
-/*Определяет степень сжатия файла в процентах*/
-double compressionRatio(double firstSize, double lastSize)
-{
-	double percent;
-	percent = (firstSize - lastSize) / firstSize * 100;
-	return percent;
-}
 int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrOnStruct)
 {
 	unsigned short crc = CRC;
@@ -99,7 +40,7 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 		{
 				_stat64(fileNames[u], &info);
 				if (accessRights(fileNames[u], READING) != 1) {
-					printf("[WARNING:]Архив %s не имеет прав на чтение\n", archiveName);
+					printf("[WARNING:]Файл %s не имеет прав на чтение\n", archiveName);
 					return 0;
 				}
 				if ((fin = fopen(fileNames[u], "rb")) == NULL)
@@ -311,4 +252,3 @@ int addFiles(char *archiveName, char **fileNames,int *amountOfFiles, Info **ptrO
 	}
 	return 0;
 }
-

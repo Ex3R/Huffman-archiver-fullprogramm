@@ -48,7 +48,10 @@
     <ClCompile Include="deleteFile.c">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
-    <ClCompile Include="checks.c">
+    <ClCompile Include="archivator.c">
+      <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
+    <ClCompile Include="extractionFiles.c">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
   </ItemGroup>

@@ -66,7 +66,7 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		}
 		if (strcount > 0) addFiles(param[2], strarray, strcount, &ptrOnStruct);
 		else printf("[ERROR:] No files for adding\n");
-		//free all
+		//освобождение памяти под список имён
 		for (int i = 0; i < strcount; i++)
 			free(strarray[i]);
 		free(strarray);
@@ -77,113 +77,19 @@ int toggleSwitch(char* operation, int amount, char *param[])
 	//извлечь файл(ы) из архива
 	if (!strcmp(param[1], "-x"))
 	{
-		unsigned short crc = CRC;
 		if ((checkUssd(param[2], SIGNATURE)) != 0)
 			return 0;
-		FILE *archive = NULL;
 		if (accessRights(param[2],READING) != 1) {
 			printf("[WARNING:]Архив %s не имеет прав на чтение\n", param[2]);
 			return 1;
 		}
+		FILE *archive = NULL;
+		List *head = NULL; makeListOfFiles(amount, param, &head);
 		if ((archive = fopen(param[2], "rb")) == NULL)
 			OPEN_ERR
-		Info *ptrOnStruct = NULL;
-		if ((ptrOnStruct = (Info*)malloc(sizeof(Info))) == NULL)
-			ALLOC_MEMORY_ERR
-		List *head = NULL;
-		List *tmp = NULL;
-		tmp = (List*)malloc(sizeof(List));
-		makeListOfFiles(amount, param, &head);
-		if (!head)
-		{
-			printf("[ERROR:] Список извлекаемых пуст\n");
-			return 0;
-		}
-		UINT64 size = getSize(archive);
-		if (_fseeki64_nolock(archive, SIZE_SIGNATURE, SEEK_SET) != 0)
-			FSEEK_ERR
-		int count = 0;
-		while ((_ftelli64_nolock(archive)) != size)
-		{
-			if ((fread(&((ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1 , archive)) != 1)
-				READING_DATA_ERR
-			if ((fread(&((ptrOnStruct)->lengthName), SIZE_LENGTHNAME , 1 , archive))!= 1)
-				READING_DATA_ERR
-			if ((fread(&((ptrOnStruct)->name), ((ptrOnStruct)->lengthName), 1, archive)) != 1)
-				READING_DATA_ERR
-			if ((fread(&((ptrOnStruct)->flags), SIZE_FLAGS, 1, archive)) != 1)
-				READING_DATA_ERR
-			if ((fread(&((ptrOnStruct)->compression), SIZE_FLAGS, 1, archive)) != 1)
-				READING_DATA_ERR
-			if ((fread(&((ptrOnStruct)->size), SIZE_SIZE, 1, archive)) != 1)
-				READING_DATA_ERR
-			char * tmpFileName = (char*)malloc(((ptrOnStruct)->lengthName) + 1);
-			strncpy((tmpFileName), (ptrOnStruct)->name, (ptrOnStruct)->lengthName);
-			tmpFileName[(ptrOnStruct)->lengthName] = '\0';
-			char flagForDeleting = 0;
-			//сравнение со списком файлов
-			tmp = head;
-			while (tmp)
-			{
-				//если они совпали
-				if (!strcmp(tmp->file, tmpFileName))
-				{
-					flagForDeleting = 1;
-					FILE *newFile = NULL;
-					char *data = NULL;
-					if (fileExists(tmpFileName))
-					{
-						if (!accessRights(tmpFileName, WRITING))
-						{
-								printf("[WARNING:]Архив %s не имеет прав на чтение и запись\n", tmpFileName);
-								return 1;
-						}
-						
-					}
-					if ((newFile = fopen(tmpFileName, "wb")) == NULL)
-						CREATE_FILE_ERR
-					if ((ptrOnStruct)->flags == 0) {
-						if ((data = (char*)malloc(SizeOfBuf)) == NULL)
-							ALLOC_MEMORY_ERR
-						writeDataToFile(data, archive, newFile, &crc, ptrOnStruct->size);
-						free(data);
-					}
-					else
-					{
-						decode(archive, newFile,&crc, (ptrOnStruct)->size);
-					}
-					//проверка crc
-					if (crc != (ptrOnStruct)->checkSum)
-						printf("[WARNING:] В процессе извлечения файл был повреждён:(\n");
-					count =deleteByValue(&head, tmpFileName);
-					fflush(newFile);
-					if (fclose(newFile) == -1)
-						CLOSING_FILE_ERR
-					break;
-				}
-				tmp = tmp->next;
-			}
-			if (flagForDeleting == 0)
-			{
-				_fseeki64_nolock(archive, ptrOnStruct->size, SEEK_CUR);
-			}
-			else
-			{
-				flagForDeleting = 0;
-			}
-			//если не было совпадений
-
-			free(tmpFileName);
-		}
-		if (count == 1)  head = NULL;
-		if (head)
-		{
-			printf("[WARNING:] Следующие файлы отсутствуют в архиве\n");
-			printLinkedList(head);
-		}
+		int er = extractFiles(&head,archive);
 		if (fclose(archive) == -1)
 			CLOSING_FILE_ERR
-		free(ptrOnStruct);
 		return 0;
 	}
 	//вывести информацию о файлах
@@ -238,11 +144,10 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		Info *ptrOnStruct = NULL;
 		if ((ptrOnStruct = (Info*)malloc(sizeof(Info))) == NULL)
 			ALLOC_MEMORY_ERR
-		char **file =NULL;
+		char **file =NULL;//указатель на файл, в котором будет ошибка при несовпадении crc
 		if (integrityСheck(param[2], &ptrOnStruct, &file) == 1)
 			printf("Архив %s повреждён, а именно на файле %s\n", param[2], file);
 		else printf("Архив %s цел\n", param[2]);
-		//TODO free???
 		free(file);
 		file = NULL;
 		free(ptrOnStruct);

@@ -2,18 +2,23 @@
 void showInfo(char* archiveName, Info **ptrOnStruct)
 {
 	FILE* archive = NULL;
+	if (!fileExists(archiveName))
+	{
+		printf("Архив %s не существует\n", archiveName);
+	}
 	if ((archive = fopen(archiveName, "rb")) == NULL)
 		OPEN_ERR
 	UINT64 endOFFile = getSize(archive);
 	if (endOFFile == 0)
 	{
-		printf("[WARNING:]Архив пуст:(\n");
+		printf("[WARNING:]Архив %s пуст:(\n",archive);
 		return;
 	}
 	//однократное чтение сигнатуры
 	if (_fseeki64_nolock(archive, SIZE_SIGNATURE, SEEK_SET) != 0)
 		FSEEK_ERR
 	printf("Информация о файлах в архиве %s:\n",shortNameOnly(archiveName));
+	printf("Имя файла    Размер файла  Сжатый/несжатый   %%Сжатия\n");
 	while ((ftell(archive))!= endOFFile)
 	{
 		if ((fread(&((*ptrOnStruct)->checkSum), SIZE_CHECKSUM, 1 , archive)) != 1)
@@ -30,32 +35,31 @@ void showInfo(char* archiveName, Info **ptrOnStruct)
 				READING_DATA_ERR
 			if (_fseeki64_nolock(archive, (*ptrOnStruct)->size, SEEK_CUR)!=0)
 			FSEEK_ERR
-	//запись информации
 	for(int i=0; (i<(*ptrOnStruct)->lengthName);i++)
 		printf("%c", (*ptrOnStruct)->name[i]);
 	/*красивый вывод*/
 		if ((*ptrOnStruct)->size < 1024)
 		{
-			printf("  %   llu%s  ", (*ptrOnStruct)->size, BYTE);
+			printf("  %   llu %s  ", (*ptrOnStruct)->size, BYTE);
 		}
 		else
 		{
 			(*ptrOnStruct)->size /= 1024;
 			if ((*ptrOnStruct)->size < 1024)
 			{
-				printf("  %   llu%s  ", (*ptrOnStruct)->size, KB);
+				printf("  %   llu %s  ", (*ptrOnStruct)->size, KB);
 			}
 			else
 			{
 				(*ptrOnStruct)->size /= 1024;
 				if ((*ptrOnStruct)->size < 1024)
 				{
-					printf("  %   llu%s  ", (*ptrOnStruct)->size, MB);
+					printf("  %   llu %s  ", (*ptrOnStruct)->size, MB);
 				}
 				else
 				{
 					(*ptrOnStruct)->size /= 1024;
-					printf("  %   llu%s  ", (*ptrOnStruct)->size, GB);
+					printf("  %   llu %s  ", (*ptrOnStruct)->size, GB);
 				}
 			}
 		}

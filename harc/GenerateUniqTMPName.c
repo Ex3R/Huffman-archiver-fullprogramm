@@ -1,17 +1,4 @@
 #include "header.h";
-
-int fileExists(char * filename)
-{
-	return (access(filename, 0) == 0);
-}
-/*
-1 - если пправа на чтение и запись есть
-иначе прав нет
-*/
-int accessRights(char *fileName,int mode)
-{
-		return (access(fileName, mode) == 0);
-}
 char *uniqName() {
 	unsigned char randChislo;
 	char *path = NULL;
