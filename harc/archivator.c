@@ -125,7 +125,11 @@ char checkUssd(char* archiveName)
 	}
 	FILE* archive = NULL;
 	if ((archive = fopen(archiveName, "rb")) == NULL)
-		OPEN_ERR
+	{
+		printf("[ERROR:] Архив %s не существует в данном каталоге\n", archiveName);
+		return 1;
+
+	}
 		//проверка сигнатуры
 		unsigned int curUssd = 0;
 	if (fread(&curUssd, SIZE_SIGNATURE, 1, archive) != 1)

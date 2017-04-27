@@ -7,7 +7,7 @@ int extractFiles(List **listOfFiles,FILE *archive)
 	UINT64 size;
 	char *data = NULL;
 	Info *ptrOnStruct = NULL;
-	List *tmp = NULL;
+	List *temp = NULL;
 	char flagForDeleting;
 	int flagExtractAll = 0;
 	if ((ptrOnStruct = (Info*)malloc(sizeof(Info))) == NULL)
@@ -15,7 +15,6 @@ int extractFiles(List **listOfFiles,FILE *archive)
 	if (!(*listOfFiles)) {
 		flagExtractAll = 1;
 	}
-	tmp = (List*)malloc(sizeof(List));
 	size = getSize(archive);
 	if (_fseeki64_nolock(archive, SIZE_SIGNATURE, SEEK_SET) != 0)
 		FSEEK_ERR
@@ -39,10 +38,10 @@ int extractFiles(List **listOfFiles,FILE *archive)
 			if (!flagExtractAll)
 			{
 				flagForDeleting = 0;
-				tmp = (*listOfFiles);
-				while (tmp)
+				temp = (*listOfFiles);
+				while (temp)
 				{
-						if (!strcmp(tmp->file, tmpFileName))//если они совпали
+						if (!strcmp(temp->file, tmpFileName))//если они совпали
 						{
 							flagForDeleting = 1;
 							newFile = NULL;
@@ -56,6 +55,7 @@ int extractFiles(List **listOfFiles,FILE *archive)
 							}
 							if ((newFile = fopen(tmpFileName, "wb")) == NULL)
 								CREATE_FILE_ERR
+								crc = CRC;
 								if ((ptrOnStruct)->flags == 0) {
 								if ((data = (char*)malloc(SizeOfBuf)) == NULL)
 									ALLOC_MEMORY_ERR
@@ -74,7 +74,7 @@ int extractFiles(List **listOfFiles,FILE *archive)
 								CLOSING_FILE_ERR
 							break;
 						}
-						tmp = tmp->next;
+						temp = temp->next;
 				}
 				if (flagForDeleting == 0)
 				{
@@ -83,14 +83,11 @@ int extractFiles(List **listOfFiles,FILE *archive)
 				else
 				{
 					flagForDeleting = 0;
+					//???????????
+					break;
 				}
 				free(tmpFileName);
-				if (count == 1)  *listOfFiles = NULL;
-				if (*listOfFiles)
-				{
-					printf("[WARNING:] Следующие файлы отсутствуют в архиве\n");
-					printLinkedList(*listOfFiles);
-				}
+				continue;
 			}
 		//извлечь все
 			newFile = NULL;
@@ -104,10 +101,12 @@ int extractFiles(List **listOfFiles,FILE *archive)
 			}
 			if ((newFile = fopen(tmpFileName, "wb")) == NULL)
 				CREATE_FILE_ERR
+				crc = CRC;
+			free(tmpFileName);
 				if ((ptrOnStruct)->flags == 0) {
 					if ((data = (char*)malloc(SizeOfBuf)) == NULL)
 						ALLOC_MEMORY_ERR
-						writeDataToFile(data, archive, newFile, &crc, ptrOnStruct->size);
+					writeDataToFile(data, archive, newFile, &crc, ptrOnStruct->size);
 					free(data);
 				}
 				else
@@ -120,6 +119,14 @@ int extractFiles(List **listOfFiles,FILE *archive)
 			if (fclose(newFile) == -1)
 				CLOSING_FILE_ERR
 		}
+	if (!flagExtractAll) {
+		if (count == 1)  *listOfFiles = NULL;
+		if (*listOfFiles)
+		{
+			printf("[WARNING:] Следующие файлы отсутствуют в архиве\n");
+			printLinkedList(*listOfFiles);
+		}
+	}
 	free(ptrOnStruct);
 	return 0;
 }

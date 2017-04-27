@@ -132,28 +132,28 @@ void CodeTable(Tree *root, char codes[256][256], char vrm[256], int flag)
 	char tmp[256];
 	int i = 0;
 	strcpy(tmp, vrm);
-		if (root->symbol >= 0)
+	if (root->symbol >= 0)
+	{
+		if ((!root->left) && (!root->right) && !flag)
 		{
-			if ((!root->left) && (!root->right) &&!flag)
-			{
-				strcat(tmp, "0");
-				strcpy(codes[root->symbol], tmp);
-				return;
-			}
+			strcat(tmp, "0");
 			strcpy(codes[root->symbol], tmp);
 			return;
 		}
-			
-		if (root->left)
-			CodeTable(root->left, codes, strcat(tmp, "0"),1);
+		strcpy(codes[root->symbol], tmp);
+		return;
+	}
 
-		while (tmp[i])
-			i++;
-		tmp[--i] = '\0';
+	if (root->left)
+		CodeTable(root->left, codes, strcat(tmp, "0"), 1);
 
-		if (root->right)
-			CodeTable(root->right, codes, strcat(tmp, "1"),1);
-	
+	while (tmp[i])
+		i++;
+	tmp[--i] = '\0';
+
+	if (root->right)
+		CodeTable(root->right, codes, strcat(tmp, "1"), 1);
+
 }
 void CharToString(char *SymBuf, char c)
 {
@@ -168,7 +168,7 @@ pos - позиция в буфере(0 до 7)
 buffer - накапливаемый до байта набор битов
 value - массив символов, который мы добавляем
 */
-UINT64 writeBits(FILE *file, int *position, unsigned char *buffer, char *value,unsigned short *crc)
+UINT64 writeBits(FILE *file, int *position, unsigned char *buffer, char *value, unsigned short *crc)
 {
 	int written = 0;//для подсчёта размера (в байтах)
 	int bit;
@@ -185,7 +185,7 @@ UINT64 writeBits(FILE *file, int *position, unsigned char *buffer, char *value,u
 			fwrite(buffer, sizeof(char), 1, file);
 			if (crc)
 			{
-				crc16(buffer, 1 , crc);
+				crc16(buffer, 1, crc);
 			}
 			written++;
 			(*position) = 0;
@@ -198,10 +198,10 @@ UINT64 writeBits(FILE *file, int *position, unsigned char *buffer, char *value,u
 /*Функция записи дерева в файл
 0-если узел, 1 - если лист, за 1 всегда следует код символа
 */
-void WriteTree(Tree* root, unsigned char *buffer, int *position, FILE *outputFile,unsigned short *crc,int flag)
+void WriteTree(Tree* root, unsigned char *buffer, int *position, FILE *outputFile, unsigned short *crc, int flag)
 {
 	char SymBuf[] = { "00000000" };
-	if ((!root->left) && (!root->right) &&!flag)
+	if ((!root->left) && (!root->right) && !flag)
 	{
 		writeBits(outputFile, position, buffer, "1", crc);
 		CharToString(SymBuf, (char)(root->symbol));
@@ -210,14 +210,14 @@ void WriteTree(Tree* root, unsigned char *buffer, int *position, FILE *outputFil
 	}
 	if ((root->symbol == -1))
 	{
-		writeBits(outputFile, position, buffer, "0",crc);
-		WriteTree(root->left, buffer, position, outputFile,crc,1);
-		WriteTree(root->right, buffer, position, outputFile,crc,1);
+		writeBits(outputFile, position, buffer, "0", crc);
+		WriteTree(root->left, buffer, position, outputFile, crc, 1);
+		WriteTree(root->right, buffer, position, outputFile, crc, 1);
 		return;
 	}
-	writeBits(outputFile, position, buffer, "1",crc);
+	writeBits(outputFile, position, buffer, "1", crc);
 	CharToString(SymBuf, (char)(root->symbol));
-	writeBits(outputFile, position, buffer, SymBuf,crc);
+	writeBits(outputFile, position, buffer, SymBuf, crc);
 }
 /*Кодирование содержимого файла*/
 UINT64 writeData(char codes[256][256], int *position, unsigned char *buffer, FILE *inputFile, FILE *outputFile, UINT64 size, unsigned short *crc)
@@ -227,7 +227,7 @@ UINT64 writeData(char codes[256][256], int *position, unsigned char *buffer, FIL
 	UINT64 count = 0;
 	while (count != size) {
 		c = fgetc(inputFile);
-		writtenData += writeBits(outputFile, position, buffer, codes[c],crc);
+		writtenData += writeBits(outputFile, position, buffer, codes[c], crc);
 		count++;
 	}
 	return writtenData;
@@ -255,19 +255,19 @@ void encode(FILE *inputFile, FILE *outputFile, UINT64 fileSize, unsigned short *
 		}
 	}
 	int flag = makeHuffmanTree(&head);
-	CodeTable(head, codes, vrm,flag);// Построение кодов для символов
+	CodeTable(head, codes, vrm, flag);// Построение кодов для символов
 	placeBeforeTree = _ftelli64_nolock(outputFile);
 	_fseeki64_nolock(outputFile, sizeof(UINT64), SEEK_CUR);
 	// Записываем дерево
-	WriteTree(head, &bufferTmp, &pos, outputFile,crc,flag);
+	WriteTree(head, &bufferTmp, &pos, outputFile, crc, flag);
 	_fseeki64_nolock(inputFile, posAtBegin, SEEK_SET);//сдвиг в начало инпут файла для кодирования
 	posInWRTree = pos;//запоминаем позицию в буфере при записи дерева в файл
-	writtenData = writeData(codes, &pos, &bufferTmp, inputFile, outputFile, fileSize,crc);
+	writtenData = writeData(codes, &pos, &bufferTmp, inputFile, outputFile, fileSize, crc);
 	writtenData *= 8;
 	if (pos != 0)//дозапись последнего байта
 	{
 		fwrite(&bufferTmp, sizeof(char), 1, outputFile);
-		crc16(&bufferTmp, 1 , crc);
+		crc16(&bufferTmp, 1, crc);
 		bufferTmp = 0;
 		writtenData += pos;
 		pos = 0;

@@ -64,7 +64,7 @@ int makeHuffmanTree(Tree **head);
 void CodeTable(Tree *root, char codes[256][256], char vrm[256],int flag);
 void CharToString(char *SymBuf, char c);
 UINT64 writeBits(FILE *file, int *position, unsigned char *buffer, char *value, unsigned short *crc);
-void WriteTree(Tree* root, unsigned char *buffer, int *position, FILE *outputFile,unsigned short *crc,int flag);
+void WriteTree(Tree* root, unsigned char *buffer, int *position, FILE *outputFile,unsigned short *crc, int flag);
 UINT64 writeData(char codes[256][256], int *position, unsigned char *buffer, FILE *inputFile, FILE *outputFile, UINT64 size, unsigned short *crc);
 void encode(FILE *inputFile, FILE *outputFile, UINT64 fileSize, unsigned short *crc);
 void deleteNode(Tree* root);

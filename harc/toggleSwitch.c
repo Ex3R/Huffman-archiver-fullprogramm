@@ -1,14 +1,14 @@
-#include "header.h"
+п»ї#include "header.h"
 void printHelp()
 {
-	printf("Программа архиватор имеет следующий формат вызова:\n"
-		"harc.exe <операция> <имя архива> <имя файла> ....\n"
-		"Операции:\n"
-		"-a - поместить файл(ы) в архив\n"
-		"-x - извлечь файл(ы) из архивa\n"
-		"-d - удалить файл из архива\n"
-		"-t - проверить целостность архива\n"
-		"P.S не поддерживается архивация файлов из разных дирректорий\n"
+	printf("РџСЂРѕРіСЂР°РјРјР° Р°СЂС…РёРІР°С‚РѕСЂ РёРјРµРµС‚ СЃР»РµРґСѓСЋС‰РёР№ С„РѕСЂРјР°С‚ РІС‹Р·РѕРІР°:\n"
+		"harc.exe <РѕРїРµСЂР°С†РёСЏ> <РёРјСЏ Р°СЂС…РёРІР°> <РёРјСЏ С„Р°Р№Р»Р°> ....\n"
+		"РћРїРµСЂР°С†РёРё:\n"
+		"-a - РїРѕРјРµСЃС‚РёС‚СЊ С„Р°Р№Р»(С‹) РІ Р°СЂС…РёРІ\n"
+		"-x - РёР·РІР»РµС‡СЊ С„Р°Р№Р»(С‹) РёР· Р°СЂС…РёРІa\n"
+		"-d - СѓРґР°Р»РёС‚СЊ С„Р°Р№Р» РёР· Р°СЂС…РёРІР°\n"
+		"-t - РїСЂРѕРІРµСЂРёС‚СЊ С†РµР»РѕСЃС‚РЅРѕСЃС‚СЊ Р°СЂС…РёРІР°\n"
+		"P.S РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ Р°СЂС…РёРІР°С†РёСЏ С„Р°Р№Р»РѕРІ РёР· СЂР°Р·РЅС‹С… РґРёСЂСЂРµРєС‚РѕСЂРёР№\n"
 	);
 }
 /*
@@ -18,19 +18,27 @@ Parsing parameters:
 */
 int toggleSwitch(char* operation, int amount, char *param[])
 {
-	if ((amount<3) & (strcmp(param[1], "-help")))
+	if ((amount<3))
 	{
-		printf("[ERROR:] Количество параметром не может быть меньше 2\n");
+		if (amount > 1)
+		{
+			if (!strcmp(param[1], "-help"))
+			{
+				printHelp();
+				return 0;
+			}
+		}
+		printf("[ERROR:] РљРѕР»РёС‡РµСЃС‚РІРѕ РїР°СЂР°РјРµС‚СЂРѕРј РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РјРµРЅСЊС€Рµ 2\n");
 		printHelp();
 		return 0;
 	}
-	//поместить файл(ы) в архив
+	//РїРѕРјРµСЃС‚РёС‚СЊ С„Р°Р№Р»(С‹) РІ Р°СЂС…РёРІ
 	if (!strcmp(param[1], "-a"))
 	{
-		Info *ptrOnStruct = NULL; //указатель на структуру
-		if ((ptrOnStruct = (Info*)malloc(sizeof(Info))) == NULL)//выделение памяти под структуру
+		Info *ptrOnStruct = NULL; //СѓРєР°Р·Р°С‚РµР»СЊ РЅР° СЃС‚СЂСѓРєС‚СѓСЂСѓ
+		if ((ptrOnStruct = (Info*)malloc(sizeof(Info))) == NULL)//РІС‹РґРµР»РµРЅРёРµ РїР°РјСЏС‚Рё РїРѕРґ СЃС‚СЂСѓРєС‚СѓСЂСѓ
 			ALLOC_MEMORY_ERR
-		/* код функции проверяющий исходные данные и возвращающий список неповторяющихся файлов*/
+		/* РєРѕРґ С„СѓРЅРєС†РёРё РїСЂРѕРІРµСЂСЏСЋС‰РёР№ РёСЃС…РѕРґРЅС‹Рµ РґР°РЅРЅС‹Рµ Рё РІРѕР·РІСЂР°С‰Р°СЋС‰РёР№ СЃРїРёСЃРѕРє РЅРµРїРѕРІС‚РѕСЂСЏСЋС‰РёС…СЃСЏ С„Р°Р№Р»РѕРІ*/
 		int dubl = 0;
 		FILE* tryOpen = NULL;
 		char **strarray = NULL;
@@ -38,17 +46,17 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		for (int i = 3; i != amount; i++)
 		{
 			if ((tryOpen = fopen(param[i], "rb")) == NULL)
-				//переходим на следующий
+				//РїРµСЂРµС…РѕРґРёРј РЅР° СЃР»РµРґСѓСЋС‰РёР№
 				continue;
 			else
 			{
-				//сравнение на повтор
+				//СЃСЂР°РІРЅРµРЅРёРµ РЅР° РїРѕРІС‚РѕСЂ
 				for (int j = 3; (j < i); j++)
 				{
-					//если совпал, то выводим сообщение и игнорим его
+					//РµСЃР»Рё СЃРѕРІРїР°Р», С‚Рѕ РІС‹РІРѕРґРёРј СЃРѕРѕР±С‰РµРЅРёРµ Рё РёРіРЅРѕСЂРёРј РµРіРѕ
 					if (!strcmp(param[i], param[j]))
 					{
-						printf("[WARNING:]Несколько раз встретился файл %s\n", param[i]);
+						printf("[WARNING:]РќРµСЃРєРѕР»СЊРєРѕ СЂР°Р· РІСЃС‚СЂРµС‚РёР»СЃСЏ С„Р°Р№Р» %s\n", param[i]);
 						dubl = 1;
 						break;
 					}
@@ -57,16 +65,16 @@ int toggleSwitch(char* operation, int amount, char *param[])
 				{
 					dubl = 0;
 					continue;
-					//также пропускаем его
+					//С‚Р°РєР¶Рµ РїСЂРѕРїСѓСЃРєР°РµРј РµРіРѕ
 				}
-				//добавление имени в массив
+				//РґРѕР±Р°РІР»РµРЅРёРµ РёРјРµРЅРё РІ РјР°СЃСЃРёРІ
 				strarray = (char **)realloc(strarray, (strcount + 1) * sizeof(char *));
 				strarray[strcount++] = strdup(param[i]);
 			}
 		}
 		if (strcount > 0) addFiles(param[2], strarray, strcount, &ptrOnStruct);
 		else printf("[ERROR:] No files for adding\n");
-		//освобождение памяти под список имён
+		//РѕСЃРІРѕР±РѕР¶РґРµРЅРёРµ РїР°РјСЏС‚Рё РїРѕРґ СЃРїРёСЃРѕРє РёРјС‘РЅ
 		for (int i = 0; i < strcount; i++)
 			free(strarray[i]);
 		free(strarray);
@@ -74,13 +82,13 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		return 0;
 	}
 
-	//извлечь файл(ы) из архива
+	//РёР·РІР»РµС‡СЊ С„Р°Р№Р»(С‹) РёР· Р°СЂС…РёРІР°
 	if (!strcmp(param[1], "-x"))
 	{
 		if ((checkUssd(param[2], SIGNATURE)) != 0)
 			return 0;
 		if (accessRights(param[2],READING) != 1) {
-			printf("[WARNING:]Архив %s не имеет прав на чтение\n", param[2]);
+			printf("[WARNING:]РђСЂС…РёРІ %s РЅРµ РёРјРµРµС‚ РїСЂР°РІ РЅР° С‡С‚РµРЅРёРµ\n", param[2]);
 			return 1;
 		}
 		FILE *archive = NULL;
@@ -92,12 +100,12 @@ int toggleSwitch(char* operation, int amount, char *param[])
 			CLOSING_FILE_ERR
 		return 0;
 	}
-	//вывести информацию о файлах
+	//РІС‹РІРµСЃС‚Рё РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С„Р°Р№Р»Р°С…
 	if (!strcmp(param[1], "-l"))
 	{
 		if (amount != 3)
 		{
-			printf("[WARNING:]Неверное количество параметров для опции %s\n", "-l");
+			printf("[WARNING:]РќРµРІРµСЂРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ РїР°СЂР°РјРµС‚СЂРѕРІ РґР»СЏ РѕРїС†РёРё %s\n", "-l");
 			printHelp();
 			return 0;
 		}
@@ -111,12 +119,12 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		free(ptrOnStruct);
 		return 0;
 	}
-	//удалить файл из архива
+	//СѓРґР°Р»РёС‚СЊ С„Р°Р№Р» РёР· Р°СЂС…РёРІР°
 	if (!strcmp(param[1], "-d"))
 	{
 		if (amount != 4)
 		{
-			printf("[WARNING:]Неверное количество параметров для опции %s\n", DELETE);
+			printf("[WARNING:]РќРµРІРµСЂРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ РїР°СЂР°РјРµС‚СЂРѕРІ РґР»СЏ РѕРїС†РёРё %s\n", DELETE);
 			printHelp();
 			return 0;
 		}
@@ -130,12 +138,12 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		return 0;
 	}
 
-	//проверить целостность архива
+	//РїСЂРѕРІРµСЂРёС‚СЊ С†РµР»РѕСЃС‚РЅРѕСЃС‚СЊ Р°СЂС…РёРІР°
 	if (!strcmp(param[1], "-t"))
 	{
 		if (amount != 3)
 		{
-			printf("[WARNING:]Неверное количество параметров для опции %s\n", INTEGRITYCHECK);
+			printf("[WARNING:]РќРµРІРµСЂРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ РїР°СЂР°РјРµС‚СЂРѕРІ РґР»СЏ РѕРїС†РёРё %s\n", INTEGRITYCHECK);
 			printHelp();
 			return 0;
 		}
@@ -144,10 +152,10 @@ int toggleSwitch(char* operation, int amount, char *param[])
 		Info *ptrOnStruct = NULL;
 		if ((ptrOnStruct = (Info*)malloc(sizeof(Info))) == NULL)
 			ALLOC_MEMORY_ERR
-		char **file =NULL;//указатель на файл, в котором будет ошибка при несовпадении crc
-		if (integrityСheck(param[2], &ptrOnStruct, &file) == 1)
-			printf("Архив %s повреждён, а именно на файле %s\n", param[2], file);
-		else printf("Архив %s цел\n", param[2]);
+		char **file =NULL;//СѓРєР°Р·Р°С‚РµР»СЊ РЅР° С„Р°Р№Р», РІ РєРѕС‚РѕСЂРѕРј Р±СѓРґРµС‚ РѕС€РёР±РєР° РїСЂРё РЅРµСЃРѕРІРїР°РґРµРЅРёРё crc
+		if (integrityРЎheck(param[2], &ptrOnStruct, &file) == 1)
+			printf("РђСЂС…РёРІ %s РїРѕРІСЂРµР¶РґС‘РЅ, Р° РёРјРµРЅРЅРѕ РЅР° С„Р°Р№Р»Рµ %s\n", param[2], file);
+		else printf("РђСЂС…РёРІ %s С†РµР»\n", param[2]);
 		free(file);
 		file = NULL;
 		free(ptrOnStruct);

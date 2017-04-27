@@ -40,32 +40,32 @@ void showInfo(char* archiveName, Info **ptrOnStruct)
 	/*красивый вывод*/
 		if ((*ptrOnStruct)->size < 1024)
 		{
-			printf("  %   llu %s  ", (*ptrOnStruct)->size, BYTE);
+			printf("%9llu%-10s", (*ptrOnStruct)->size, BYTE);
 		}
 		else
 		{
 			(*ptrOnStruct)->size /= 1024;
 			if ((*ptrOnStruct)->size < 1024)
 			{
-				printf("  %   llu %s  ", (*ptrOnStruct)->size, KB);
+				printf("%9llu%-10s", (*ptrOnStruct)->size, KB);
 			}
 			else
 			{
 				(*ptrOnStruct)->size /= 1024;
 				if ((*ptrOnStruct)->size < 1024)
 				{
-					printf("  %   llu %s  ", (*ptrOnStruct)->size, MB);
+					printf("%9llu%-10s", (*ptrOnStruct)->size, MB);
 				}
 				else
 				{
 					(*ptrOnStruct)->size /= 1024;
-					printf("  %   llu %s  ", (*ptrOnStruct)->size, GB);
+					printf("%9llu%-10s", (*ptrOnStruct)->size, GB);
 				}
 			}
 		}
-	if ((*ptrOnStruct)->flags == ZERO) printf("%s", "Не сжатый   ");
-		else printf("%s", "Cжатый   ");
-	printf("%d%s", (*ptrOnStruct)->compression, "%\n");
+	if ((*ptrOnStruct)->flags == ZERO) printf("%8s", "Не сжатый");
+		else printf("%8s", "Cжатый");
+	printf("%15d%s", (*ptrOnStruct)->compression, "%\n");
 	}
 	if (fclose(archive) == -1)
 		CLOSING_FILE_ERR
